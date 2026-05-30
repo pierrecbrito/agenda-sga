@@ -7,6 +7,12 @@ Monolito Django inicial para o sistema Agenda SGA.
 - `config/`: configuracao do projeto Django
 - `apps/core/`: aplicacao principal com a pagina inicial
 
+## Modelo de usuarios
+
+- `Cidadao` concentra os dados cadastrais.
+- `Endereco` fica separado para simplificar manutencao e evolucao.
+- Administradores do sistema continuam sendo usuarios do Django com `is_staff` ou `is_superuser`, ligados a um `Cidadao` quando necessario.
+
 ## Como executar
 
 1. Crie e ative um ambiente virtual.
