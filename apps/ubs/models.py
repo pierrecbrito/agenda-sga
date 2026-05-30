@@ -49,6 +49,8 @@ class EnderecoUbs(models.Model):
     bairro = models.CharField(max_length=100)
     cidade = models.CharField(max_length=100)
     uf = models.CharField(max_length=2)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     class Meta:
         verbose_name = "endereco da ubs"

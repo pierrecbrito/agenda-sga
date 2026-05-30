@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Agenda SGA{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
+    {% block extra_head %}{% endblock %}
   </head>
   <body>
     <main class="page-shell {% block shell_class %}{% endblock %}">

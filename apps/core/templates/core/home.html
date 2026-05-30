@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{% endblock %}
+
 {% block title %}Agenda SGA{% endblock %}
 
 {% block shell_class %}page-shell--dashboard{% endblock %}
@@ -66,54 +70,106 @@
       <div class="dashboard-hero__stats">
         <article class="metric-card">
           <span class="metric-card__label">UBS ativas</span>
-          <strong class="metric-card__value">12</strong>
-          <span class="metric-card__hint">2 novas nesta semana</span>
+          <strong class="metric-card__value">{{ total_ubs }}</strong>
+          <span class="metric-card__hint">Unidades persistidas no banco</span>
         </article>
         <article class="metric-card">
-          <span class="metric-card__label">Vagas hoje</span>
-          <strong class="metric-card__value">48</strong>
-          <span class="metric-card__hint">31 disponíveis</span>
+          <span class="metric-card__label">UBS localizadas</span>
+          <strong class="metric-card__value">{{ total_ubs_localizadas }}</strong>
+          <span class="metric-card__hint">Com coordenadas para o mapa</span>
         </article>
         <article class="metric-card">
-          <span class="metric-card__label">Agendamentos</span>
-          <strong class="metric-card__value">126</strong>
-          <span class="metric-card__hint">94 confirmados</span>
+          <span class="metric-card__label">Endereços</span>
+          <strong class="metric-card__value">{{ total_enderecos_ubs }}</strong>
+          <span class="metric-card__hint">Registros com endereço salvo</span>
         </article>
       </div>
     </section>
 
     <section class="dashboard-grid">
-      <article class="dashboard-card panel" id="ubs">
+      <article class="dashboard-card panel dashboard-map-panel" id="ubs">
+        <div class="dashboard-card__head">
+          <h2 class="feature-card__title">UBS no mapa</h2>
+          <span class="dashboard-card__badge">Leaflet</span>
+        </div>
+        <p class="feature-card__text">Acompanhe a distribuição das UBS cadastradas e a cobertura territorial da rede municipal.</p>
+        <div id="dashboard-ubs-map" class="dashboard-map" aria-label="Mapa com a localização das UBS"></div>
+      </article>
+
+      <article class="dashboard-card panel dashboard-list-panel" id="agendamentos">
         <div class="dashboard-card__head">
           <h2 class="feature-card__title">UBS cadastradas</h2>
-          <span class="dashboard-card__badge">Rede municipal</span>
+          <span class="dashboard-card__badge">Lista real</span>
         </div>
-        <p class="feature-card__text">Acompanhe a cobertura por distrito sanitário e as unidades com agenda online liberada.</p>
-      </article>
-
-      <article class="dashboard-card panel" id="agendamentos">
-        <div class="dashboard-card__head">
-          <h2 class="feature-card__title">Agendamentos recentes</h2>
-          <span class="dashboard-card__badge">Fila em tempo real</span>
+        <div class="dashboard-ubs-list">
+          {% for ubs in ubs_lista %}
+            <article class="dashboard-ubs-item">
+              <strong class="dashboard-ubs-item__title">{{ ubs.nome }}</strong>
+              <span class="dashboard-ubs-item__meta">{{ ubs.distrito_sanitario }} · {{ ubs.telefone }}</span>
+              {% if ubs.endereco %}
+                <span class="dashboard-ubs-item__address">{{ ubs.endereco.logradouro }}, {{ ubs.endereco.numero }} - {{ ubs.endereco.bairro }} · {{ ubs.endereco.cidade }}/{{ ubs.endereco.uf }}</span>
+              {% endif %}
+            </article>
+          {% endfor %}
         </div>
-        <p class="feature-card__text">Monitore confirmações, cancelamentos e faltas em uma visão consolidada.</p>
-      </article>
-
-      <article class="dashboard-card panel" id="cidadaos">
-        <div class="dashboard-card__head">
-          <h2 class="feature-card__title">Cidadãos</h2>
-          <span class="dashboard-card__badge">Base cadastral</span>
-        </div>
-        <p class="feature-card__text">Dados pessoais, endereço e contato reunidos para agilizar os atendimentos.</p>
-      </article>
-
-      <article class="dashboard-card panel" id="relatorios">
-        <div class="dashboard-card__head">
-          <h2 class="feature-card__title">Indicadores</h2>
-          <span class="dashboard-card__badge">Gestão</span>
-        </div>
-        <p class="feature-card__text">Visualize produtividade, ocupação de agenda e especialidades mais utilizadas.</p>
       </article>
     </section>
   </section>
+
+  {{ ubs_localizadas|json_script:"dashboard-ubs-data" }}
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    (() => {
+      const mapElement = document.getElementById("dashboard-ubs-map");
+      const dataElement = document.getElementById("dashboard-ubs-data");
+
+      if (!mapElement || !dataElement || typeof L === "undefined") {
+        return;
+      }
+
+      const ubsData = JSON.parse(dataElement.textContent || "[]");
+      const map = L.map(mapElement, { scrollWheelZoom: false });
+      const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri',
+      });
+      const streets = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      });
+
+      satellite.addTo(map);
+      L.control.layers(
+        {
+          Satélite: satellite,
+          Ruas: streets,
+        },
+        null,
+        { collapsed: true }
+      ).addTo(map);
+
+      if (!ubsData.length) {
+        map.setView([-5.793, -35.333], 12);
+        return;
+      }
+
+      const bounds = [];
+
+      ubsData.forEach((item) => {
+        const marker = L.marker([item.latitude, item.longitude]).addTo(map);
+        marker.bindPopup(`
+          <strong>${item.nome}</strong><br>
+          ${item.logradouro}, ${item.numero} - ${item.bairro}<br>
+          ${item.cidade}/${item.uf}<br>
+          ${item.distrito_sanitario}
+        `);
+        bounds.push([item.latitude, item.longitude]);
+      });
+
+      map.fitBounds(bounds, { padding: [24, 24] });
+    })();
+  </script>
 {% endblock %}

@@ -324,6 +324,50 @@ body {
   padding: 24px;
 }
 
+.dashboard-map-panel {
+  grid-column: 1 / -1;
+}
+
+.dashboard-map {
+  width: 100%;
+  height: 420px;
+  margin-top: 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--surface-border);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+}
+
+.dashboard-list-panel {
+  align-content: start;
+}
+
+.dashboard-ubs-list {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-ubs-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: #fbfcff;
+}
+
+.dashboard-ubs-item__title {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.dashboard-ubs-item__meta,
+.dashboard-ubs-item__address {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .dashboard-card__head {
   display: flex;
   align-items: center;
@@ -545,5 +589,9 @@ body {
 
   .dashboard-hero__stats {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-map {
+    height: 320px;
   }
 }
