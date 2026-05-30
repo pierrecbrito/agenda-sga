@@ -6,21 +6,48 @@
 
 {% block content %}
   <section class="dashboard-shell">
-    <header class="dashboard-topbar panel panel--dashboard-topbar">
-      <div class="dashboard-brand">
-        <span class="dashboard-brand__label">Agenda SGA</span>
-        <strong class="dashboard-brand__title">Painel principal</strong>
+    <header class="dashboard-topbar">
+      <div class="dashboard-topbar__inner">
+        <div class="dashboard-brand">
+          <span class="dashboard-brand__label">Agenda SGA</span>
+          <strong class="dashboard-brand__title">Painel principal</strong>
+        </div>
+
+        <nav class="dashboard-menu" aria-label="Menu principal">
+          <a class="dashboard-menu__link dashboard-menu__link--active" href="#resumo">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 13h6V4H4zm10 7h6V11h-6zM4 20h6v-5H4zm10 0h6v-5h-6zM14 4v5h6V4z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">Resumo</span>
+          </a>
+          <a class="dashboard-menu__link" href="#ubs">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2 2 7v2h20V7zM4 11h16v9H4zm3 2v5h2v-5zm4 0v5h2v-5zm4 0v5h2v-5z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">UBS</span>
+          </a>
+          <a class="dashboard-menu__link" href="#agendamentos">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2h2v2h6V2h2v2h3v18H4V4h3zm13 6H4v12h16zm-9 2h2v2h-2zm0 4h2v2h-2z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">Agendamentos</span>
+          </a>
+          <a class="dashboard-menu__link" href="#cidadaos">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">Cidadãos</span>
+          </a>
+          <a class="dashboard-menu__link" href="#relatorios">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 19h16v2H2V3h2zm3-2h2V9H7zm4 0h2V5h-2zm4 0h2v-6h-2zm4 0h2V7h-2z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">Relatórios</span>
+          </a>
+        </nav>
+
+        <a class="dashboard-topbar__action" href="{% url 'logout' %}">Sair</a>
       </div>
-
-      <nav class="dashboard-menu" aria-label="Menu principal">
-        <a class="dashboard-menu__link dashboard-menu__link--active" href="#resumo">Resumo</a>
-        <a class="dashboard-menu__link" href="#ubs">UBS</a>
-        <a class="dashboard-menu__link" href="#agendamentos">Agendamentos</a>
-        <a class="dashboard-menu__link" href="#cidadaos">Cidadãos</a>
-        <a class="dashboard-menu__link" href="#relatorios">Relatórios</a>
-      </nav>
-
-      <a class="dashboard-topbar__action" href="{% url 'logout' %}">Sair</a>
     </header>
 
     <section class="dashboard-hero panel panel--dashboard-hero" id="resumo">

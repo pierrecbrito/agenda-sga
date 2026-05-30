@@ -11,6 +11,26 @@
     <main class="page-shell {% block shell_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>
+    <section class="toast-stack" aria-live="polite" aria-atomic="true">
+      {% if messages %}
+        {% for message in messages %}
+          <article class="toast toast--{{ message.tags|default:'info' }}">
+            <span class="toast__icon" aria-hidden="true">
+              {% if message.tags == 'success' %}
+                <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M9 16.2 4.8 12l-1.6 1.6L9 19.4 21 7.4 19.4 5.8z"></path></svg>
+              {% elif message.tags == 'error' %}
+                <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z"></path></svg>
+              {% elif message.tags == 'warning' %}
+                <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M1 21h22L12 2 1 21zm11-3h-2v-2h2zm0-4h-2v-4h2z"></path></svg>
+              {% else %}
+                <svg viewBox="0 0 24 24" role="img" focusable="false"><path d="M11 7h2V5h-2zm0 4h2v8h-2zm1-9a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path></svg>
+              {% endif %}
+            </span>
+            <span class="toast__text">{{ message }}</span>
+          </article>
+        {% endfor %}
+      {% endif %}
+    </section>
     <script src="{% static 'assets/js/cpf-mask.js' %}" defer></script>
     {% block scripts %}{% endblock %}
   </body>
