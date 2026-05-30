@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vagas Disponiveis</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 32px; background: #0f172a; color: #e2e8f0; }
+      .card { background: #111827; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+      a, select, button { font: inherit; }
+      .meta { color: #94a3b8; font-size: 0.95rem; }
+      .status { display: inline-block; background: #1d4ed8; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Vagas disponiveis</h1>
+    <form method="get" style="margin-bottom: 24px;">
+      <label for="especialidade">Especialidade</label>
+      <select id="especialidade" name="especialidade">
+        <option value="">Todas</option>
+        {% for id, nome in especialidades %}
+          <option value="{{ id }}" {% if especialidade_selecionada == id|stringformat:"s" %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Filtrar</button>
+    </form>
+
+    {% for vaga in vagas %}
+      <div class="card">
+        <div class="status">{{ vaga.get_status_display }}</div>
+        <h2>{{ vaga.especialidade.nome }}</h2>
+        <p class="meta">UBS: {{ vaga.ubs.nome_fantasia }} | CNES {{ vaga.ubs.cnes }}</p>
+        {% if vaga.data_vaga %}
+          <p>Data: {{ vaga.data_vaga }} | Horario: {{ vaga.hora_inicio }} - {{ vaga.hora_fim }}</p>
+        {% else %}
+          <p>Recorrente: {{ vaga.get_dia_semana_display }} | Horario: {{ vaga.hora_inicio }} - {{ vaga.hora_fim }}</p>
+        {% endif %}
+        <p class="meta">Protocolo: {{ vaga.protocolo }}</p>
+      </div>
+    {% empty %}
+      <p>Nenhuma vaga disponivel no momento.</p>
+    {% endfor %}
+  </body>
+</html>
