@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}UBS | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+  <section class="ubs-page-shell">
+    <header class="ubs-hero panel">
+      <div>
+        <div class="pill">Rede de UBS</div>
+        <h1 class="page-title">Unidades básicas cadastradas</h1>
+        <p class="page-lead">Cadastre, edite, acompanhe e exclua UBS com endereço, especialidades e estatísticas de agendamento por unidade.</p>
+      </div>
+      <div class="ubs-hero__actions">
+        <a class="button-primary ubs-hero__button" href="{% url 'ubs:create' %}">Nova UBS</a>
+        <a class="dashboard-topbar__action ubs-hero__button-secondary" href="{% url 'home' %}">Voltar ao dashboard</a>
+      </div>
+    </header>
+
+    <section class="ubs-stats-grid">
+      <article class="metric-card">
+        <span class="metric-card__label">UBS cadastradas</span>
+        <strong class="metric-card__value">{{ stats.total_ubs }}</strong>
+        <span class="metric-card__hint">Unidades disponíveis no sistema</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-card__label">Com endereço</span>
+        <strong class="metric-card__value">{{ stats.total_com_endereco }}</strong>
+        <span class="metric-card__hint">Registros prontos para o mapa</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-card__label">Agenda online</span>
+        <strong class="metric-card__value">{{ stats.total_com_agendamento_online }}</strong>
+        <span class="metric-card__hint">UBS com agendamento liberado</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-card__label">Vagas confirmadas</span>
+        <strong class="metric-card__value">{{ stats.total_vagas_confirmadas }}</strong>
+        <span class="metric-card__hint">Slots ativos vinculados à rede</span>
+      </article>
+    </section>
+
+    <section class="panel ubs-list-panel">
+      <div class="dashboard-card__head">
+        <div>
+          <h2 class="feature-card__title">Listagem horizontal</h2>
+          <p class="dashboard-card__text">Passe para o lado para navegar pelas UBS cadastradas em grade horizontal.</p>
+        </div>
+        <span class="dashboard-card__badge">CRUD</span>
+      </div>
+
+      <div class="ubs-list-grid" aria-label="Lista horizontal de UBS cadastradas">
+        {% for ubs in ubs_list %}
+          <article class="ubs-card" data-ubs-card="{{ ubs.pk }}">
+            <div class="ubs-card__head">
+              <div>
+                <strong class="ubs-card__title">{{ ubs.nome_fantasia }}</strong>
+                <span class="ubs-card__subtitle">{{ ubs.distrito_sanitario }}</span>
+              </div>
+              <span class="ubs-card__tag">{{ ubs.cnes }}</span>
+            </div>
+
+            <div class="ubs-card__body">
+              <p class="ubs-card__line">{{ ubs.telefone }}</p>
+              <p class="ubs-card__line">{{ ubs.email }}</p>
+              {% if ubs.endereco %}
+                <p class="ubs-card__line">{{ ubs.endereco.logradouro }}, {{ ubs.endereco.numero }} - {{ ubs.endereco.bairro }}</p>
+                <p class="ubs-card__line">{{ ubs.endereco.cidade }}/{{ ubs.endereco.uf }}</p>
+              {% endif %}
+            </div>
+
+            <div class="ubs-card__stats">
+              <span>{{ ubs.total_vagas }} vagas</span>
+              <span>{{ ubs.vagas_confirmadas }} confirmadas</span>
+              <span>{{ ubs.vagas_executadas }} executadas</span>
+            </div>
+
+            <div class="ubs-card__footer">
+              <button type="button" class="ubs-card__action" data-dialog-target="detail" data-ubs-detail="{{ ubs.pk }}">Detalhes</button>
+              <button type="button" class="ubs-card__action" data-dialog-target="edit" data-ubs-edit="{{ ubs.pk }}">Editar</button>
+              <button type="button" class="ubs-card__action ubs-card__danger" data-dialog-target="delete" data-ubs-delete="{{ ubs.pk }}">Excluir</button>
+            </div>
+          </article>
+        {% empty %}
+          <p class="feature-card__text">Nenhuma UBS cadastrada ainda.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </section>
+
+  <dialog class="ubs-dialog" id="ubs-detail-dialog" aria-labelledby="ubs-detail-title">
+    <form method="dialog" class="ubs-dialog__shell">
+      <header class="ubs-dialog__head">
+        <div>
+          <div class="pill">Detalhes da UBS</div>
+          <h2 class="ubs-dialog__title" id="ubs-detail-title">Detalhes</h2>
+        </div>
+        <button class="ubs-dialog__close" value="cancel" aria-label="Fechar">×</button>
+      </header>
+      <section class="ubs-dialog__content" id="ubs-detail-content"></section>
+      <footer class="ubs-dialog__footer">
+        <button type="button" class="dashboard-topbar__action" id="ubs-detail-edit-trigger">Editar</button>
+        <button type="button" class="dashboard-topbar__action ubs-card__danger" id="ubs-detail-delete-trigger">Excluir</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="ubs-dialog ubs-dialog--wide" id="ubs-edit-dialog" aria-labelledby="ubs-edit-title">
+    <form method="post" class="ubs-dialog__shell ubs-dialog__shell--form" id="ubs-edit-form">
+      {% csrf_token %}
+      <header class="ubs-dialog__head">
+        <div>
+          <div class="pill">Editar UBS</div>
+          <h2 class="ubs-dialog__title" id="ubs-edit-title">Editar UBS</h2>
+        </div>
+        <button class="ubs-dialog__close" type="button" data-dialog-close aria-label="Fechar">×</button>
+      </header>
+
+      <section class="ubs-form">
+        <div class="ubs-form-section">
+          <h3 class="feature-card__title">Cadastro da UBS</h3>
+          <div class="form-grid form-grid--two">
+            {% for field in ubs_form %}
+              <div class="field-group{% if field.name == 'especialidades' %} field-group--full{% endif %}">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="ubs-form-section">
+          <h3 class="feature-card__title">Endereço</h3>
+          <div class="form-grid form-grid--two">
+            {% for field in endereco_form %}
+              <div class="field-group{% if field.name == 'complemento' or field.name == 'latitude' or field.name == 'longitude' %} field-group--full{% endif %}">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button class="button-primary" type="submit">Salvar</button>
+        <button type="button" class="dashboard-topbar__action" data-dialog-close>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="ubs-dialog" id="ubs-delete-dialog" aria-labelledby="ubs-delete-title">
+    <form method="post" class="ubs-dialog__shell" id="ubs-delete-form">
+      {% csrf_token %}
+      <header class="ubs-dialog__head">
+        <div>
+          <div class="pill">Excluir UBS</div>
+          <h2 class="ubs-dialog__title" id="ubs-delete-title">Confirmar exclusão</h2>
+        </div>
+        <button class="ubs-dialog__close" type="button" data-dialog-close aria-label="Fechar">×</button>
+      </header>
+      <p class="feature-card__text" id="ubs-delete-text">Tem certeza que deseja excluir esta UBS?</p>
+      <footer class="ubs-dialog__footer">
+        <button class="button-primary" type="submit">Excluir</button>
+        <button type="button" class="dashboard-topbar__action" data-dialog-close>Cancelar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  {{ ubs_dialog_data|json_script:"ubs-dialog-data" }}
+
+  <script>
+    (() => {
+      const dataElement = document.getElementById('ubs-dialog-data');
+      const detailDialog = document.getElementById('ubs-detail-dialog');
+      const editDialog = document.getElementById('ubs-edit-dialog');
+      const deleteDialog = document.getElementById('ubs-delete-dialog');
+      const detailContent = document.getElementById('ubs-detail-content');
+      const deleteText = document.getElementById('ubs-delete-text');
+      const editForm = document.getElementById('ubs-edit-form');
+      const deleteForm = document.getElementById('ubs-delete-form');
+      const detailEditTrigger = document.getElementById('ubs-detail-edit-trigger');
+      const detailDeleteTrigger = document.getElementById('ubs-detail-delete-trigger');
+
+      if (!dataElement || !detailDialog || !editDialog || !deleteDialog) {
+        return;
+      }
+
+      const ubsList = JSON.parse(dataElement.textContent || '[]');
+      const ubsById = Object.fromEntries(ubsList.map((item) => [String(item.pk), item]));
+
+      const openDialog = (dialog) => {
+        if (typeof dialog.showModal === 'function') {
+          dialog.showModal();
+        } else {
+          dialog.setAttribute('open', 'open');
+        }
+      };
+
+      const closeDialog = (dialog) => {
+        if (typeof dialog.close === 'function') {
+          dialog.close();
+        } else {
+          dialog.removeAttribute('open');
+        }
+      };
+
+      const renderDetail = (ubs) => {
+        detailContent.innerHTML = `
+          <div class="ubs-detail-list">
+            <p><strong>CNES:</strong> ${ubs.cnes}</p>
+            <p><strong>Distrito:</strong> ${ubs.distrito_sanitario}</p>
+            <p><strong>Telefone:</strong> ${ubs.telefone}</p>
+            <p><strong>Email:</strong> ${ubs.email}</p>
+            <p><strong>Horário:</strong> ${ubs.horario_abertura} às ${ubs.horario_fechamento}</p>
+            <p><strong>Agenda online:</strong> ${ubs.permite_agendamento_online ? 'Sim' : 'Não'}</p>
+            <p><strong>Antecedência:</strong> ${ubs.antecedencia_maxima_dias} dias</p>
+            <p><strong>Vagas:</strong> ${ubs.total_vagas} | <strong>Confirmadas:</strong> ${ubs.vagas_confirmadas} | <strong>Executadas:</strong> ${ubs.vagas_executadas}</p>
+            <p><strong>Endereço:</strong> ${ubs.endereco ? `${ubs.endereco.logradouro}, ${ubs.endereco.numero} - ${ubs.endereco.bairro} · ${ubs.endereco.cidade}/${ubs.endereco.uf}` : 'Sem endereço'}</p>
+          </div>
+        `;
+      };
+
+      const fillEditForm = (ubs) => {
+        const fields = {
+          'id_ubs-cnes': ubs.cnes,
+          'id_ubs-cnpj': ubs.cnpj,
+          'id_ubs-nome_fantasia': ubs.nome_fantasia,
+          'id_ubs-razao_social': ubs.razao_social,
+          'id_ubs-distrito_sanitario': ubs.distrito_sanitario,
+          'id_ubs-telefone': ubs.telefone,
+          'id_ubs-email': ubs.email,
+          'id_ubs-horario_abertura': ubs.horario_abertura,
+          'id_ubs-horario_fechamento': ubs.horario_fechamento,
+          'id_ubs-permite_agendamento_online': ubs.permite_agendamento_online,
+          'id_ubs-antecedencia_maxima_dias': ubs.antecedencia_maxima_dias,
+          'id_endereco-cep': ubs.endereco ? ubs.endereco.cep : '',
+          'id_endereco-logradouro': ubs.endereco ? ubs.endereco.logradouro : '',
+          'id_endereco-numero': ubs.endereco ? ubs.endereco.numero : '',
+          'id_endereco-complemento': ubs.endereco ? ubs.endereco.complemento || '' : '',
+          'id_endereco-bairro': ubs.endereco ? ubs.endereco.bairro : '',
+          'id_endereco-cidade': ubs.endereco ? ubs.endereco.cidade : '',
+          'id_endereco-uf': ubs.endereco ? ubs.endereco.uf : '',
+          'id_endereco-latitude': ubs.endereco ? ubs.endereco.latitude || '' : '',
+          'id_endereco-longitude': ubs.endereco ? ubs.endereco.longitude || '' : '',
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+          const field = document.getElementById(id);
+          if (!field) {
+            return;
+          }
+          if (field.type === 'checkbox') {
+            field.checked = Boolean(value);
+          } else {
+            field.value = value ?? '';
+          }
+        });
+
+        const specialidades = document.getElementById('id_ubs-especialidades');
+        if (specialidades) {
+          Array.from(specialidades.options).forEach((option) => {
+            option.selected = (ubs.especialidades || []).includes(Number(option.value));
+          });
+        }
+      };
+
+      const bindAction = (selector, handler) => {
+        document.querySelectorAll(selector).forEach((button) => {
+          button.addEventListener('click', () => handler(button));
+        });
+      };
+
+      bindAction('[data-ubs-detail]', (button) => {
+        const ubs = ubsById[String(button.dataset.ubsDetail)];
+        if (!ubs) {
+          return;
+        }
+        renderDetail(ubs);
+        detailEditTrigger.dataset.ubsId = String(ubs.pk);
+        detailDeleteTrigger.dataset.ubsId = String(ubs.pk);
+        openDialog(detailDialog);
+      });
+
+      bindAction('[data-ubs-edit]', (button) => {
+        const ubs = ubsById[String(button.dataset.ubsEdit)];
+        if (!ubs) {
+          return;
+        }
+        editForm.action = `/ubs/${ubs.pk}/editar/`;
+        fillEditForm(ubs);
+        openDialog(editDialog);
+      });
+
+      bindAction('[data-ubs-delete]', (button) => {
+        const ubs = ubsById[String(button.dataset.ubsDelete)];
+        if (!ubs) {
+          return;
+        }
+        deleteForm.action = `/ubs/${ubs.pk}/excluir/`;
+        deleteText.innerHTML = `Tem certeza que deseja excluir <strong>${ubs.nome_fantasia}</strong>?`;
+        openDialog(deleteDialog);
+      });
+
+      detailEditTrigger?.addEventListener('click', () => {
+        const ubs = ubsById[String(detailEditTrigger.dataset.ubsId)];
+        if (!ubs) {
+          return;
+        }
+        detailDialog.close();
+        editForm.action = `/ubs/${ubs.pk}/editar/`;
+        fillEditForm(ubs);
+        openDialog(editDialog);
+      });
+
+      detailDeleteTrigger?.addEventListener('click', () => {
+        const ubs = ubsById[String(detailDeleteTrigger.dataset.ubsId)];
+        if (!ubs) {
+          return;
+        }
+        detailDialog.close();
+        deleteForm.action = `/ubs/${ubs.pk}/excluir/`;
+        deleteText.innerHTML = `Tem certeza que deseja excluir <strong>${ubs.nome_fantasia}</strong>?`;
+        openDialog(deleteDialog);
+      });
+
+      document.querySelectorAll('[data-dialog-close]').forEach((button) => {
+        button.addEventListener('click', () => {
+          closeDialog(button.closest('dialog'));
+        });
+      });
+
+      [detailDialog, editDialog, deleteDialog].forEach((dialog) => {
+        dialog.addEventListener('click', (event) => {
+          if (event.target === dialog) {
+            closeDialog(dialog);
+          }
+        });
+      });
+    })();
+  </script>
+{% endblock %}

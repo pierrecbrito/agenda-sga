@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Excluir UBS | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+  <section class="ubs-page-shell">
+    <header class="ubs-hero panel">
+      <div>
+        <div class="pill">Exclusão</div>
+        <h1 class="page-title">Excluir UBS</h1>
+        <p class="page-lead">Essa ação remove a UBS, o endereço relacionado e as ligações associadas.</p>
+      </div>
+    </header>
+
+    <form method="post" class="panel ubs-form ubs-form--danger">
+      {% csrf_token %}
+      <p class="feature-card__text">Confirma a exclusão de <strong>{{ ubs.nome_fantasia }}</strong>?</p>
+      <div class="form-actions">
+        <button class="button-primary" type="submit">Confirmar exclusão</button>
+        <a class="dashboard-topbar__action" href="{% url 'ubs:detail' ubs.pk %}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

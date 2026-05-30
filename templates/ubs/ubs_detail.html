@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ubs.nome_fantasia }} | UBS{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+  <section class="ubs-page-shell">
+    <header class="ubs-hero panel">
+      <div>
+        <div class="pill">Detalhes da UBS</div>
+        <h1 class="page-title">{{ ubs.nome_fantasia }}</h1>
+        <p class="page-lead">{{ ubs.razao_social }} · {{ ubs.distrito_sanitario }}</p>
+      </div>
+      <div class="ubs-hero__actions">
+        <a class="button-primary ubs-hero__button" href="{% url 'ubs:update' ubs.pk %}">Editar UBS</a>
+        <a class="dashboard-topbar__action ubs-hero__button-secondary" href="{% url 'ubs:index' %}">Voltar</a>
+      </div>
+    </header>
+
+    <section class="ubs-stats-grid">
+      <article class="metric-card">
+        <span class="metric-card__label">Vagas totais</span>
+        <strong class="metric-card__value">{{ stats.total }}</strong>
+        <span class="metric-card__hint">Histórico de agendamentos</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-card__label">Confirmadas</span>
+        <strong class="metric-card__value">{{ stats.confirmadas }}</strong>
+        <span class="metric-card__hint">Vagas ativas</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-card__label">Executadas</span>
+        <strong class="metric-card__value">{{ stats.executadas }}</strong>
+        <span class="metric-card__hint">Atendimentos concluídos</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-card__label">Canceladas / faltas</span>
+        <strong class="metric-card__value">{{ stats.canceladas|add:stats.faltas }}</strong>
+        <span class="metric-card__hint">Ocorrências negativas</span>
+      </article>
+    </section>
+
+    <section class="ubs-detail-grid">
+      <article class="panel ubs-detail-card">
+        <h2 class="feature-card__title">Dados cadastrais</h2>
+        <div class="ubs-detail-list">
+          <p><strong>CNES:</strong> {{ ubs.cnes }}</p>
+          <p><strong>CNPJ:</strong> {{ ubs.cnpj }}</p>
+          <p><strong>Telefone:</strong> {{ ubs.telefone }}</p>
+          <p><strong>Email:</strong> {{ ubs.email }}</p>
+          <p><strong>Horário:</strong> {{ ubs.horario_abertura }} às {{ ubs.horario_fechamento }}</p>
+          <p><strong>Agendamento online:</strong> {{ ubs.permite_agendamento_online|yesno:"Sim,Não" }}</p>
+          <p><strong>Antecedência máxima:</strong> {{ ubs.antecedencia_maxima_dias }} dias</p>
+        </div>
+      </article>
+
+      <article class="panel ubs-detail-card">
+        <h2 class="feature-card__title">Endereço</h2>
+        {% if ubs.endereco %}
+          <div class="ubs-detail-list">
+            <p>{{ ubs.endereco.logradouro }}, {{ ubs.endereco.numero }}</p>
+            <p>{{ ubs.endereco.bairro }} · {{ ubs.endereco.cidade }}/{{ ubs.endereco.uf }}</p>
+            <p>CEP {{ ubs.endereco.cep }}</p>
+            <p>{% if ubs.endereco.latitude and ubs.endereco.longitude %}{{ ubs.endereco.latitude }}, {{ ubs.endereco.longitude }}{% else %}Sem coordenadas{% endif %}</p>
+          </div>
+        {% else %}
+          <p class="feature-card__text">Nenhum endereço cadastrado.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel ubs-detail-card ubs-detail-card--wide">
+        <h2 class="feature-card__title">Especialidades</h2>
+        <div class="ubs-chip-list">
+          {% for especialidade in ubs.especialidades.all %}
+            <span class="ubs-chip">{{ especialidade.nome }}</span>
+          {% empty %}
+            <p class="feature-card__text">Nenhuma especialidade vinculada.</p>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="panel ubs-detail-card ubs-detail-card--wide">
+        <h2 class="feature-card__title">Agendamentos recentes</h2>
+        <div class="ubs-recent-list">
+          {% for vaga in recentes %}
+            <article class="ubs-recent-item">
+              <strong>{{ vaga.especialidade.nome }}</strong>
+              <span>{{ vaga.data_vaga|default:vaga.get_dia_semana_display }} · {{ vaga.hora_inicio }} às {{ vaga.hora_fim }}</span>
+              <span>{{ vaga.get_status_display }}</span>
+            </article>
+          {% empty %}
+            <p class="feature-card__text">Nenhum agendamento encontrado para esta UBS.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form_mode == 'create' %}Nova UBS{% else %}Editar UBS{% endif %} | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+  <section class="ubs-page-shell">
+    <header class="ubs-hero panel">
+      <div>
+        <div class="pill">CRUD UBS</div>
+        <h1 class="page-title">{% if form_mode == 'create' %}Cadastrar UBS{% else %}Editar UBS{% endif %}</h1>
+        <p class="page-lead">Preencha os dados cadastrais e o endereço da unidade para manter a listagem e o mapa atualizados.</p>
+      </div>
+      <div class="ubs-hero__actions">
+        <a class="dashboard-topbar__action ubs-hero__button-secondary" href="{% url 'ubs:index' %}">Voltar</a>
+      </div>
+    </header>
+
+    <form method="post" class="panel ubs-form">
+      {% csrf_token %}
+
+      <section class="ubs-form-section">
+        <h2 class="feature-card__title">Cadastro da UBS</h2>
+        <div class="form-grid form-grid--two">
+          {% for field in ubs_form %}
+            <div class="field-group{% if field.name == 'especialidades' %} field-group--full{% endif %}">
+              <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="ubs-form-section">
+        <h2 class="feature-card__title">Endereço</h2>
+        <div class="form-grid form-grid--two">
+          {% for field in endereco_form %}
+            <div class="field-group{% if field.name == 'complemento' or field.name == 'latitude' or field.name == 'longitude' %} field-group--full{% endif %}">
+              <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="field-help">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button class="button-primary" type="submit">Salvar</button>
+        <a class="dashboard-topbar__action" href="{% url 'ubs:index' %}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}
