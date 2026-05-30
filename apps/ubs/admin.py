@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EnderecoUbs, Ubs
+from .models import EnderecoUbs, Especialidade, Ubs
 
 
 @admin.register(Ubs)
@@ -20,6 +20,13 @@ class UbsAdmin(admin.ModelAdmin):
     )
     search_fields = ("nome_fantasia", "razao_social", "cnes", "cnpj", "distrito_sanitario")
     list_filter = ("permite_agendamento_online", "distrito_sanitario")
+    filter_horizontal = ("especialidades",)
+
+
+@admin.register(Especialidade)
+class EspecialidadeAdmin(admin.ModelAdmin):
+    list_display = ("cbo_codigo", "nome")
+    search_fields = ("cbo_codigo", "nome")
 
 
 @admin.register(EnderecoUbs)

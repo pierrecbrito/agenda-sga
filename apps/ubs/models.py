@@ -2,6 +2,11 @@ from django.db import models
 
 
 class Ubs(models.Model):
+    especialidades = models.ManyToManyField(
+        "Especialidade",
+        blank=True,
+        related_name="ubs",
+    )
     cnes = models.CharField(max_length=20, unique=True)
     cnpj = models.CharField(max_length=18, unique=True)
     nome_fantasia = models.CharField(max_length=255)
@@ -20,6 +25,19 @@ class Ubs(models.Model):
 
     def __str__(self):
         return f"{self.nome_fantasia} ({self.cnes})"
+
+
+class Especialidade(models.Model):
+    cbo_codigo = models.CharField(max_length=6, unique=True)
+    nome = models.CharField(max_length=255)
+
+    class Meta:
+        verbose_name = "especialidade"
+        verbose_name_plural = "especialidades"
+        ordering = ["nome"]
+
+    def __str__(self):
+        return f"{self.cbo_codigo} - {self.nome}"
 
 
 class EnderecoUbs(models.Model):
