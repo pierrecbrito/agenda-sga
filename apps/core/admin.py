@@ -14,8 +14,9 @@ class CidadaoAdmin(admin.ModelAdmin):
         "data_nascimento",
         "genero",
         "cartao_sus",
+        "whatsapp",
     )
-    search_fields = ("nome_completo", "cpf", "rg_numero", "cartao_sus", "naturalidade")
+    search_fields = ("nome_completo", "cpf", "rg_numero", "cartao_sus", "naturalidade", "whatsapp")
     list_filter = ("genero",)
 
 
