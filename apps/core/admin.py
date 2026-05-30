@@ -9,6 +9,7 @@ class CidadaoAdmin(admin.ModelAdmin):
         "nome_completo",
         "cpf",
         "rg_numero",
+        "rg_orgao_emissor",
         "rg_data_expedicao",
         "naturalidade",
         "data_nascimento",
@@ -16,7 +17,7 @@ class CidadaoAdmin(admin.ModelAdmin):
         "cartao_sus",
         "whatsapp",
     )
-    search_fields = ("nome_completo", "cpf", "rg_numero", "cartao_sus", "naturalidade", "whatsapp")
+    search_fields = ("nome_completo", "cpf", "rg_numero", "rg_orgao_emissor", "cartao_sus", "naturalidade", "whatsapp")
     list_filter = ("genero",)
 
 

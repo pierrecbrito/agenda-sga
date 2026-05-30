@@ -19,6 +19,7 @@ class Cidadao(models.Model):
     nome_completo = models.CharField(max_length=255)
     cpf = models.CharField(max_length=14, unique=True)
     rg_numero = models.CharField(max_length=20, unique=True)
+    rg_orgao_emissor = models.CharField(max_length=50)
     rg_data_expedicao = models.DateField()
     naturalidade = models.CharField(max_length=120)
     data_nascimento = models.DateField()
