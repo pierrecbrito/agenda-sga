@@ -2,28 +2,88 @@
 
 {% block title %}Agenda SGA{% endblock %}
 
-{% block content %}
-  <section class="panel panel--wide">
-    <div class="pill">Monolito Django</div>
-    <h1 class="page-title">Agenda SGA</h1>
-    <p class="page-lead">
-      Base inicial do sistema em arquitetura monolítica, pronta para evoluir com apps internas,
-      autenticação, cadastros, rotinas administrativas e integrações futuras.
-    </p>
+{% block shell_class %}page-shell--dashboard{% endblock %}
 
-    <div class="feature-grid">
-      <article class="feature-card">
-        <h2 class="feature-card__title">Admin</h2>
-        <span class="feature-card__text">Estrutura pronta para painel administrativo e gestão interna.</span>
+{% block content %}
+  <section class="dashboard-shell">
+    <header class="dashboard-topbar panel panel--dashboard-topbar">
+      <div class="dashboard-brand">
+        <span class="dashboard-brand__label">Agenda SGA</span>
+        <strong class="dashboard-brand__title">Painel principal</strong>
+      </div>
+
+      <nav class="dashboard-menu" aria-label="Menu principal">
+        <a class="dashboard-menu__link dashboard-menu__link--active" href="#resumo">Resumo</a>
+        <a class="dashboard-menu__link" href="#ubs">UBS</a>
+        <a class="dashboard-menu__link" href="#agendamentos">Agendamentos</a>
+        <a class="dashboard-menu__link" href="#cidadaos">Cidadãos</a>
+        <a class="dashboard-menu__link" href="#relatorios">Relatórios</a>
+      </nav>
+
+      <a class="dashboard-topbar__action" href="{% url 'logout' %}">Sair</a>
+    </header>
+
+    <section class="dashboard-hero panel panel--dashboard-hero" id="resumo">
+      <div>
+        <div class="pill">Visão geral</div>
+        <h1 class="page-title">Gestão centralizada da operação</h1>
+        <p class="page-lead">
+          Controle UBS, especialidades, agendamentos e cidadãos a partir de uma visão única,
+          organizada como um painel bancário moderno.
+        </p>
+      </div>
+
+      <div class="dashboard-hero__stats">
+        <article class="metric-card">
+          <span class="metric-card__label">UBS ativas</span>
+          <strong class="metric-card__value">12</strong>
+          <span class="metric-card__hint">2 novas nesta semana</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-card__label">Vagas hoje</span>
+          <strong class="metric-card__value">48</strong>
+          <span class="metric-card__hint">31 disponíveis</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-card__label">Agendamentos</span>
+          <strong class="metric-card__value">126</strong>
+          <span class="metric-card__hint">94 confirmados</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="dashboard-card panel" id="ubs">
+        <div class="dashboard-card__head">
+          <h2 class="feature-card__title">UBS cadastradas</h2>
+          <span class="dashboard-card__badge">Rede municipal</span>
+        </div>
+        <p class="feature-card__text">Acompanhe a cobertura por distrito sanitário e as unidades com agenda online liberada.</p>
       </article>
-      <article class="feature-card">
-        <h2 class="feature-card__title">Apps</h2>
-        <span class="feature-card__text">Organização modular dentro de um único projeto Django.</span>
+
+      <article class="dashboard-card panel" id="agendamentos">
+        <div class="dashboard-card__head">
+          <h2 class="feature-card__title">Agendamentos recentes</h2>
+          <span class="dashboard-card__badge">Fila em tempo real</span>
+        </div>
+        <p class="feature-card__text">Monitore confirmações, cancelamentos e faltas em uma visão consolidada.</p>
       </article>
-      <article class="feature-card">
-        <h2 class="feature-card__title">Escala</h2>
-        <span class="feature-card__text">Pronto para crescer sem sair do monólito no início.</span>
+
+      <article class="dashboard-card panel" id="cidadaos">
+        <div class="dashboard-card__head">
+          <h2 class="feature-card__title">Cidadãos</h2>
+          <span class="dashboard-card__badge">Base cadastral</span>
+        </div>
+        <p class="feature-card__text">Dados pessoais, endereço e contato reunidos para agilizar os atendimentos.</p>
       </article>
-    </div>
+
+      <article class="dashboard-card panel" id="relatorios">
+        <div class="dashboard-card__head">
+          <h2 class="feature-card__title">Indicadores</h2>
+          <span class="dashboard-card__badge">Gestão</span>
+        </div>
+        <p class="feature-card__text">Visualize produtividade, ocupação de agenda e especialidades mais utilizadas.</p>
+      </article>
+    </section>
   </section>
 {% endblock %}
