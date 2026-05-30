@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Entrar | Agenda SGA{% endblock %}
+
+{% block content %}
+  <section class="login-card">
+    <h1 class="login-title">Entrar</h1>
+    <p class="login-text">Acesse o sistema para gerenciar UBS, cidadãos e agendamentos.</p>
+
+    {% if form.errors %}
+      <p class="form-error">Usuário ou senha inválidos.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <div class="field-group">
+        <label class="field-label" for="id_username">Usuário</label>
+        <input class="field-input" type="text" name="username" autofocus autocomplete="username" required id="id_username">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="id_password">Senha</label>
+        <input class="field-input" type="password" name="password" autocomplete="current-password" required id="id_password">
+      </div>
+
+      <button class="button-primary" type="submit">Entrar</button>
+    </form>
+  </section>
+{% endblock %}

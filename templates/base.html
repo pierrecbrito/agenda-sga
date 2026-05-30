@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Agenda SGA{% endblock %}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page-bg: #F4F5FC;
+        --surface: #ffffff;
+        --surface-border: #d9d9e3;
+        --text: #1f2937;
+        --muted: #667085;
+        --primary: #0063df;
+        --shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+        --radius: 18px;
+      }
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .page-shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+      }
+      .panel {
+        width: min(100%, 520px);
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 32px;
+      }
+      .panel--wide {
+        width: min(100%, 860px);
+      }
+      .page-title {
+        margin: 14px 0 12px;
+        font-size: clamp(2rem, 4vw, 3.25rem);
+        line-height: 1.05;
+      }
+      .page-lead {
+        margin: 0;
+        max-width: 62ch;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(0, 99, 223, 0.08);
+        color: var(--primary);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-top: 28px;
+      }
+      .feature-card {
+        background: #fbfcff;
+        border: 1px solid var(--surface-border);
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .feature-card__title {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+      .feature-card__text {
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+      .login-card {
+        width: min(100%, 420px);
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 32px;
+      }
+      .login-title {
+        margin: 0 0 8px;
+        font-size: 2rem;
+      }
+      .login-text {
+        margin: 0 0 24px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .field-group {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .field-label {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .field-input {
+        width: 100%;
+        border: 1px solid var(--surface-border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 1rem;
+        background: #fff;
+        color: var(--text);
+      }
+      .field-input:focus {
+        outline: 2px solid rgba(0, 99, 223, 0.18);
+        border-color: var(--primary);
+      }
+      .button-primary {
+        width: 100%;
+        border: 0;
+        border-radius: 12px;
+        padding: 14px 18px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .button-primary:hover {
+        filter: brightness(0.95);
+      }
+      .form-error {
+        margin: 0 0 16px;
+        color: #b42318;
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-shell">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
