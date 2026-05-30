@@ -46,7 +46,10 @@
           </a>
         </nav>
 
-        <a class="dashboard-topbar__action" href="{% url 'logout' %}">Sair</a>
+        <form method="post" action="{% url 'logout' %}" class="dashboard-topbar__logout-form">
+          {% csrf_token %}
+          <button class="dashboard-topbar__action" type="submit">Sair</button>
+        </form>
       </div>
     </header>
 
