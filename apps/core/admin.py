@@ -5,8 +5,17 @@ from .models import Cidadao, Endereco
 
 @admin.register(Cidadao)
 class CidadaoAdmin(admin.ModelAdmin):
-    list_display = ("nome_completo", "cpf", "data_nascimento", "genero", "cartao_sus")
-    search_fields = ("nome_completo", "cpf", "cartao_sus")
+    list_display = (
+        "nome_completo",
+        "cpf",
+        "rg_numero",
+        "rg_data_expedicao",
+        "naturalidade",
+        "data_nascimento",
+        "genero",
+        "cartao_sus",
+    )
+    search_fields = ("nome_completo", "cpf", "rg_numero", "cartao_sus", "naturalidade")
     list_filter = ("genero",)
 
 
