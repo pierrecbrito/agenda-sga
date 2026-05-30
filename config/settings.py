@@ -72,6 +72,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+AUTHENTICATION_BACKENDS = [
+    "apps.core.backends.CpfBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 LOGIN_URL = "/"
 LOGIN_REDIRECT_URL = "/home/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
