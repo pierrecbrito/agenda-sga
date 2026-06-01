@@ -1,6 +1,10 @@
 # Agenda SGA
 
-Monolito Django inicial para o sistema Agenda SGA.
+O Agenda SGA é um projeto voltado para a marcação de consultas em UBSs.
+
+A proposta é organizar o fluxo de atendimento para reduzir superlotação nas unidades e permitir que o usuário acompanhe, de forma digital e ao vivo, a fila de espera e o andamento do atendimento.
+
+O sistema centraliza o cadastro de cidadãos, UBSs, especialidades e agendamentos em um único monolito Django, facilitando a gestão da rede municipal de saúde.
 
 ## Estrutura
 
