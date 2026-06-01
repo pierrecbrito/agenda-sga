@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+
+  {# ── Cabeçalho ───────────────────────────────────────────────────── #}
+  <header class="panel dashboard-home-hero">
+    <div class="dashboard-home-hero__text">
+      <div class="pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg>
+        Painel principal
+      </div>
+      <h1 class="page-title">
+        {% if role == "cidadao" %}Olá, {{ request.user.cidadao.nome_completo|truncatewords:2 }}
+        {% elif role == "ubs_admin" %}Painel do administrador
+        {% else %}Visão geral do sistema
+        {% endif %}
+      </h1>
+      <p class="page-lead">
+        {% if role == "cidadao" %}
+          Acompanhe seus agendamentos, verifique os próximos atendimentos e gerencie suas solicitações.
+        {% elif role == "ubs_admin" %}
+          Resumo das unidades sob sua responsabilidade. Monitore agendamentos, taxas de execução e fluxo de atendimento.
+        {% else %}
+          Visão consolidada de toda a rede municipal. Acompanhe UBSs, cidadãos, agendamentos e indicadores operacionais em tempo real.
+        {% endif %}
+      </p>
+      <div class="dashboard-link-row">
+        <a class="button-primary dashboard-home-hero__cta" href="{% url 'vagas_disponiveis' %}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+          {% if role == "cidadao" %}Ver meus agendamentos{% else %}Gerenciar agendamentos{% endif %}
+        </a>
+        {% if role != "cidadao" %}
+          <a class="dashboard-topbar__action" href="{% url 'ubs:index' %}">Ver UBSs</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="dashboard-home-hero__today">
+      <span class="dashboard-today__label">Hoje</span>
+      <strong class="dashboard-today__value">{{ agendamentos_hoje }}</strong>
+      <span class="dashboard-today__hint">
+        {% if agendamentos_hoje == 1 %}agendamento confirmado{% else %}agendamentos confirmados{% endif %}
+      </span>
+      <div class="dashboard-today__week">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>
+        {{ agendamentos_semana }} esta semana
+      </div>
+    </div>
+  </header>
+
+  {# ── Grade de métricas ───────────────────────────────────────────── #}
+  <div class="home-metrics-grid">
+
+    {# Confirmados #}
+    <article class="home-metric-card home-metric-card--blue">
+      <div class="home-metric-card__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <div class="home-metric-card__body">
+        <span class="home-metric-card__label">Confirmados</span>
+        <strong class="home-metric-card__value">{{ total_confirmados }}</strong>
+        <span class="home-metric-card__hint">aguardando atendimento</span>
+      </div>
+    </article>
+
+    {# Executados #}
+    <article class="home-metric-card home-metric-card--green">
+      <div class="home-metric-card__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      </div>
+      <div class="home-metric-card__body">
+        <span class="home-metric-card__label">Executados</span>
+        <strong class="home-metric-card__value">{{ total_executados }}</strong>
+        <span class="home-metric-card__hint">atendimentos realizados</span>
+      </div>
+    </article>
+
+    {# Cancelados #}
+    <article class="home-metric-card home-metric-card--red">
+      <div class="home-metric-card__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+      </div>
+      <div class="home-metric-card__body">
+        <span class="home-metric-card__label">Cancelados</span>
+        <strong class="home-metric-card__value">{{ total_cancelados }}</strong>
+        <span class="home-metric-card__hint">por paciente ou unidade</span>
+      </div>
+    </article>
+
+    {# Faltas #}
+    <article class="home-metric-card home-metric-card--orange">
+      <div class="home-metric-card__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      </div>
+      <div class="home-metric-card__body">
+        <span class="home-metric-card__label">Faltas</span>
+        <strong class="home-metric-card__value">{{ total_faltas }}</strong>
+        <span class="home-metric-card__hint">paciente não compareceu</span>
+      </div>
+    </article>
+
+    {# UBSs (só para admin/super) #}
+    {% if role != "cidadao" %}
+    <article class="home-metric-card home-metric-card--teal">
+      <div class="home-metric-card__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7v2h20V7zM4 11h16v9H4zm3 2v5h2v-5zm4 0v5h2v-5zm4 0v5h2v-5z"/></svg>
+      </div>
+      <div class="home-metric-card__body">
+        <span class="home-metric-card__label">
+          {% if role == "ubs_admin" %}Minhas UBSs{% else %}UBSs ativas{% endif %}
+        </span>
+        <strong class="home-metric-card__value">{{ total_ubs }}</strong>
+        <span class="home-metric-card__hint">unidades cadastradas</span>
+      </div>
+    </article>
+    {% endif %}
+
+    {# Cidadãos (só para super admin) #}
+    {% if role == "super_admin" %}
+    <article class="home-metric-card home-metric-card--purple">
+      <div class="home-metric-card__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      </div>
+      <div class="home-metric-card__body">
+        <span class="home-metric-card__label">Cidadãos</span>
+        <strong class="home-metric-card__value">{{ total_cidadaos }}</strong>
+        <span class="home-metric-card__hint">cadastrados no sistema</span>
+      </div>
+    </article>
+    {% endif %}
+
+  </div>
+
+  {# ── Indicador de taxa de execução + total geral ───────────────── #}
+  <div class="home-kpi-row">
+    <article class="panel home-kpi-card">
+      <div class="home-kpi-card__label">Total de agendamentos</div>
+      <strong class="home-kpi-card__value">{{ total_agendamentos }}</strong>
+      <p class="home-kpi-card__hint">registros no sistema{% if role == "ubs_admin" %} das suas unidades{% elif role == "cidadao" %} seus{% endif %}</p>
+    </article>
+
+    <article class="panel home-kpi-card">
+      <div class="home-kpi-card__label">Taxa de execução</div>
+      <div class="home-kpi-rate">
+        <strong class="home-kpi-card__value home-kpi-card__value--rate">{{ taxa_execucao }}%</strong>
+        <div class="home-kpi-bar">
+          <div class="home-kpi-bar__fill" style="width: {{ taxa_execucao }}%"></div>
+        </div>
+      </div>
+      <p class="home-kpi-card__hint">do total finalizado foi atendido</p>
+    </article>
+
+    <article class="panel home-kpi-card">
+      <div class="home-kpi-card__label">Esta semana</div>
+      <strong class="home-kpi-card__value">{{ agendamentos_semana }}</strong>
+      <p class="home-kpi-card__hint">confirmados de {{ hoje|date:"d/m" }} a {{ hoje|date:"d/m" }}</p>
+    </article>
+  </div>
+
+  {# ── Próximos agendamentos ──────────────────────────────────────── #}
+  <section class="panel">
+    <div class="dashboard-card__head">
+      <div>
+        <h2 class="feature-card__title">Próximos agendamentos confirmados</h2>
+        <p class="dashboard-card__text">
+          Agendamentos a partir de hoje em ordem cronológica.
+        </p>
+      </div>
+      <a class="dashboard-card__badge dashboard-card__badge--link" href="{% url 'vagas_disponiveis' %}">Ver todos</a>
+    </div>
+
+    {% if proximos %}
+      <div class="home-proximos-list">
+        {% for ag in proximos %}
+          <article class="home-proximo-item">
+            <div class="home-proximo-date">
+              <span class="home-proximo-date__day">{{ ag.data_vaga|date:"d" }}</span>
+              <span class="home-proximo-date__mon">{{ ag.data_vaga|date:"M" }}</span>
+            </div>
+            <div class="home-proximo-body">
+              <strong class="home-proximo-especialidade">{{ ag.especialidade.nome }}</strong>
+              <span class="home-proximo-ubs">{{ ag.ubs.nome_fantasia }}</span>
+              {% if role != "cidadao" and ag.cidadao %}
+                <span class="home-proximo-cidadao">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>
+                  {{ ag.cidadao.nome_completo }}
+                </span>
+              {% endif %}
+            </div>
+            <div class="home-proximo-horario">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.5 5H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              {{ ag.hora_inicio|time:"H:i" }}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="home-proximos-empty">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+        <span>Nenhum agendamento confirmado nos próximos dias.</span>
+      </div>
+    {% endif %}
+  </section>
+
+  {# ── Links rápidos ─────────────────────────────────────────────── #}
+  <div class="home-shortcuts">
+    <a class="home-shortcut-card" href="{% url 'vagas_disponiveis' %}">
+      <div class="home-shortcut-card__icon home-shortcut-card__icon--blue">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      </div>
+      <strong>Agendamentos</strong>
+      <span>{% if role == "cidadao" %}Meus agendamentos{% else %}Gestão e listagem{% endif %}</span>
+    </a>
+
+    {% if role != "cidadao" %}
+    <a class="home-shortcut-card" href="{% url 'ubs:index' %}">
+      <div class="home-shortcut-card__icon home-shortcut-card__icon--green">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7v2h20V7zM4 11h16v9H4zm3 2v5h2v-5zm4 0v5h2v-5zm4 0v5h2v-5z"/></svg>
+      </div>
+      <strong>UBSs</strong>
+      <span>Cadastro e detalhes</span>
+    </a>
+    {% endif %}
+
+    <a class="home-shortcut-card" href="{% url 'account' %}">
+      <div class="home-shortcut-card__icon home-shortcut-card__icon--purple">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>
+      </div>
+      <strong>Minha conta</strong>
+      <span>Dados e acesso</span>
+    </a>
+
+    <a class="home-shortcut-card" href="{% url 'processos:index' %}">
+      <div class="home-shortcut-card__icon home-shortcut-card__icon--orange">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z"/></svg>
+      </div>
+      <strong>Processos</strong>
+      <span>Em desenvolvimento</span>
+    </a>
+  </div>
+
+</section>
+{% endblock %}

@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
     {% block extra_head %}{% endblock %}
   </head>
-  <body class="{% block body_class %}{% endblock %}">
+  <body class="{% block body_class %}{% endblock %}" data-cidadao-autocomplete-url="{% url 'cidadao_autocomplete' %}">
     {% if show_global_header != False %}
     <header class="dashboard-topbar">
       <div class="dashboard-topbar__inner">
@@ -107,6 +107,7 @@
     </section>
     <script src="{% static 'assets/js/cpf-mask.js' %}" defer></script>
     <script src="{% static 'assets/js/toasts.js' %}" defer></script>
+    <script src="{% static 'assets/js/cidadao-autocomplete.js' %}" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

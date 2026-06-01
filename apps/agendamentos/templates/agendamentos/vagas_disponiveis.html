@@ -1,44 +1,484 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vagas Disponiveis</title>
-    <style>
-      body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 32px; background: #0f172a; color: #e2e8f0; }
-      .card { background: #111827; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-      a, select, button { font: inherit; }
-      .meta { color: #94a3b8; font-size: 0.95rem; }
-      .status { display: inline-block; background: #1d4ed8; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; }
-    </style>
-  </head>
-  <body>
-    <h1>Vagas disponiveis</h1>
-    <form method="get" style="margin-bottom: 24px;">
-      <label for="especialidade">Especialidade</label>
-      <select id="especialidade" name="especialidade">
-        <option value="">Todas</option>
-        {% for id, nome in especialidades %}
-          <option value="{{ id }}" {% if especialidade_selecionada == id|stringformat:"s" %}selected{% endif %}>{{ nome }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">Filtrar</button>
+{% extends "base.html" %}
+
+{% block title %}Agendamentos | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+  <section class="dashboard-shell">
+
+    {# ── Cabeçalho da página ───────────────────────────────────────── #}
+    <header class="panel">
+      <div class="pill">Agendamentos</div>
+      <h1 class="page-title">
+        {% if role == "cidadao" %}Meus agendamentos
+        {% elif role == "ubs_admin" %}Agendamentos das minhas unidades
+        {% else %}Gestão de agendamentos
+        {% endif %}
+      </h1>
+      <p class="page-lead">
+        {% if role == "cidadao" %}
+          Acompanhe seus agendamentos, consulte o status de cada atendimento e realize novas solicitações nas unidades disponíveis.
+        {% elif role == "ubs_admin" %}
+          Gerencie os agendamentos das unidades sob sua responsabilidade, registre atendimentos e atualize o status das consultas.
+        {% else %}
+          Controle a agenda de todas as unidades, crie agendamentos para cidadãos e acompanhe o andamento das solicitações.
+        {% endif %}
+      </p>
+      <div class="dashboard-link-row">
+        <button class="button-primary agendamentos-create-btn" type="button" data-agendamento-create>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+          {% if role == "cidadao" %}Solicitar agendamento{% else %}Agendar atendimento{% endif %}
+        </button>
+      </div>
+    </header>
+
+    {# ── Métricas rápidas ──────────────────────────────────────────── #}
+    <div class="agendamentos-metrics">
+      <div class="agendamento-metric-card">
+        <span class="agendamento-metric-card__label">Total</span>
+        <strong class="agendamento-metric-card__value">{{ metricas.total }}</strong>
+      </div>
+      <div class="agendamento-metric-card agendamento-metric-card--confirmado">
+        <span class="agendamento-metric-card__label">Confirmados</span>
+        <strong class="agendamento-metric-card__value">{{ metricas.confirmados }}</strong>
+      </div>
+      <div class="agendamento-metric-card agendamento-metric-card--executado">
+        <span class="agendamento-metric-card__label">Executados</span>
+        <strong class="agendamento-metric-card__value">{{ metricas.executados }}</strong>
+      </div>
+      <div class="agendamento-metric-card agendamento-metric-card--cancelado">
+        <span class="agendamento-metric-card__label">Cancelados</span>
+        <strong class="agendamento-metric-card__value">{{ metricas.cancelados }}</strong>
+      </div>
+      <div class="agendamento-metric-card agendamento-metric-card--falta">
+        <span class="agendamento-metric-card__label">Faltas</span>
+        <strong class="agendamento-metric-card__value">{{ metricas.faltas }}</strong>
+      </div>
+    </div>
+
+    {# ── Filtros ───────────────────────────────────────────────────── #}
+    <form class="panel" method="get" id="agendamentos-filter-form">
+      <div class="dashboard-card__head">
+        <div>
+          <h2 class="feature-card__title">Filtros</h2>
+          <p class="dashboard-card__text">Refine a lista por unidade, especialidade, período e status.</p>
+        </div>
+        <span class="dashboard-card__badge">Pesquisa</span>
+      </div>
+      <div class="form-grid form-grid--three">
+        <div class="field-group">
+          <label class="field-label" for="{{ filter_form.ubs.id_for_label }}">{{ filter_form.ubs.label }}</label>
+          {{ filter_form.ubs }}
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="{{ filter_form.especialidade.id_for_label }}">{{ filter_form.especialidade.label }}</label>
+          {{ filter_form.especialidade }}
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="{{ filter_form.status.id_for_label }}">{{ filter_form.status.label }}</label>
+          {{ filter_form.status }}
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="{{ filter_form.data_inicio.id_for_label }}">{{ filter_form.data_inicio.label }}</label>
+          {{ filter_form.data_inicio }}
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="{{ filter_form.data_fim.id_for_label }}">{{ filter_form.data_fim.label }}</label>
+          {{ filter_form.data_fim }}
+        </div>
+        {% if role == "super_admin" or role == "ubs_admin" %}
+          <div class="field-group">
+            <label class="field-label" for="{{ filter_form.cidadao_busca.id_for_label }}">{{ filter_form.cidadao_busca.label }}</label>
+            {{ filter_form.cidadao_busca }}
+          </div>
+        {% endif %}
+      </div>
+      <div class="form-actions">
+        <button class="button-primary" type="submit" style="width:auto;">Aplicar filtros</button>
+        <a class="dashboard-topbar__action" href="{% url 'vagas_disponiveis' %}">Limpar filtros</a>
+      </div>
     </form>
 
-    {% for vaga in vagas %}
-      <div class="card">
-        <div class="status">{{ vaga.get_status_display }}</div>
-        <h2>{{ vaga.especialidade.nome }}</h2>
-        <p class="meta">UBS: {{ vaga.ubs.nome_fantasia }} | CNES {{ vaga.ubs.cnes }}</p>
-        {% if vaga.data_vaga %}
-          <p>Data: {{ vaga.data_vaga }} | Horario: {{ vaga.hora_inicio }} - {{ vaga.hora_fim }}</p>
-        {% else %}
-          <p>Recorrente: {{ vaga.get_dia_semana_display }} | Horario: {{ vaga.hora_inicio }} - {{ vaga.hora_fim }}</p>
-        {% endif %}
-        <p class="meta">Protocolo: {{ vaga.protocolo }}</p>
+    {# ── Lista de agendamentos ─────────────────────────────────────── #}
+    <section class="panel">
+      <div class="dashboard-card__head">
+        <div>
+          <h2 class="feature-card__title">
+            {% if metricas.total == 0 %}Nenhum agendamento encontrado
+            {% elif metricas.total == 1 %}1 agendamento
+            {% else %}{{ metricas.total }} agendamentos
+            {% endif %}
+          </h2>
+          <p class="dashboard-card__text">Lista atualizada conforme os filtros selecionados.</p>
+        </div>
+        <span class="dashboard-card__badge">Operação</span>
       </div>
-    {% empty %}
-      <p>Nenhuma vaga disponivel no momento.</p>
-    {% endfor %}
-  </body>
-</html>
+
+      <div class="agendamentos-list">
+        {% for agendamento in agendamentos %}
+          <article class="agendamento-item{% if agendamento.status == 'CANCELADO_PACIENTE' or agendamento.status == 'CANCELADO_UBS' or agendamento.status == 'FALTA' %} agendamento-item--encerrado{% endif %}">
+            <div class="agendamento-head">
+              <div>
+                <strong>{{ agendamento.especialidade.nome }}</strong>
+                <span class="agendamento-subtitle">{{ agendamento.ubs.nome_fantasia }} · CNES {{ agendamento.ubs.cnes }}</span>
+              </div>
+              <span class="agendamento-status" data-status="{{ agendamento.status }}">{{ agendamento.get_status_display }}</span>
+            </div>
+
+            <div class="agendamento-meta">
+              {% if agendamento.data_vaga %}
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11H7v2h2zm4 0h-2v2h2zm4 0h-2v2h2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14z"/></svg>
+                  {{ agendamento.data_vaga|date:"d/m/Y" }}
+                </span>
+              {% else %}
+                <span>Recorrente: {{ agendamento.get_dia_semana_display }}</span>
+              {% endif %}
+              <span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                {{ agendamento.hora_inicio|time:"H:i" }} – {{ agendamento.hora_fim|time:"H:i" }}
+              </span>
+              <span class="agendamento-meta__protocolo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.33C18 2.53 15.48 1 13 1c-1.32 0-2.6.53-3.54 1.46L8 4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM11.37 5.88C11.74 5.33 12.35 5 13 5c1.1 0 2 .9 2 2H9.7l1.67-1.12zM20 20H4V8h16v12z"/></svg>
+                {{ agendamento.protocolo }}
+              </span>
+            </div>
+
+            {% if role != "cidadao" %}
+              <div class="agendamento-meta agendamento-meta--cidadao">
+                <span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>
+                  {{ agendamento.cidadao.nome_completo|default:"Cidadão não informado" }}
+                </span>
+                {% if agendamento.cidadao %}
+                  <span>CPF: {{ agendamento.cidadao.cpf }}</span>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            {% if role != "usuario" %}
+              <div class="agendamento-actions">
+                {% if agendamento.status == "CONFIRMADO" %}
+                  <button
+                    class="agendamento-btn agendamento-btn--edit"
+                    type="button"
+                    data-agendamento-edit="{{ agendamento.pk }}"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    Editar
+                  </button>
+                  <button
+                    class="agendamento-btn agendamento-btn--cancel"
+                    type="button"
+                    data-agendamento-cancel="{{ agendamento.pk }}"
+                    data-cidadao-nome="{{ agendamento.cidadao.nome_completo|default:'este cidadão' }}"
+                    data-especialidade="{{ agendamento.especialidade.nome }}"
+                    data-data="{{ agendamento.data_vaga|date:'d/m/Y'|default:'recorrente' }}"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    Cancelar
+                  </button>
+                {% else %}
+                  <span class="agendamento-status-info">
+                    {% if agendamento.status == "EXECUTADO" %}Atendimento realizado{% endif %}
+                    {% if agendamento.status == "FALTA" %}Paciente não compareceu{% endif %}
+                    {% if agendamento.status == "CANCELADO_PACIENTE" %}Cancelado pelo paciente{% endif %}
+                    {% if agendamento.status == "CANCELADO_UBS" %}Cancelado pela unidade{% endif %}
+                  </span>
+                  {% if role == "super_admin" or role == "ubs_admin" %}
+                    <button
+                      class="agendamento-btn agendamento-btn--edit"
+                      type="button"
+                      data-agendamento-edit="{{ agendamento.pk }}"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      Corrigir status
+                    </button>
+                  {% endif %}
+                {% endif %}
+              </div>
+            {% endif %}
+          </article>
+        {% empty %}
+          <div class="agendamentos-empty">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            <strong>Nenhum agendamento encontrado</strong>
+            <span>
+              {% if role == "cidadao" %}
+                Você ainda não possui agendamentos. Clique em "Solicitar agendamento" para começar.
+              {% else %}
+                Nenhum agendamento corresponde aos filtros aplicados.
+              {% endif %}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </section>
+
+  {# ── Dialog: Criar agendamento ─────────────────────────────────── #}
+  <dialog
+    class="ubs-dialog ubs-dialog--wide"
+    id="agendamento-create-dialog"
+    aria-labelledby="agendamento-create-title"
+    {% if open_create_dialog %}data-open-on-load="true"{% endif %}
+  >
+    <form method="post" action="{% url 'agendamento_create' %}" class="ubs-dialog__shell ubs-dialog__shell--form" id="agendamento-create-form">
+      {% csrf_token %}
+      <header class="ubs-dialog__head">
+        <div class="ubs-dialog__titlegroup">
+          <div class="pill">Novo agendamento</div>
+          <h2 class="ubs-dialog__title" id="agendamento-create-title">
+            {% if role == "cidadao" %}Solicitar atendimento{% else %}Agendar atendimento{% endif %}
+          </h2>
+        </div>
+        <button class="ubs-dialog__close" type="button" data-dialog-close aria-label="Fechar">×</button>
+      </header>
+
+      <section class="ubs-form">
+        <div class="form-grid form-grid--two">
+          {% for field in create_form %}
+            {% if field.name == "cidadao_busca" %}
+              <div class="field-group field-group--full">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                <p class="field-help">Busque pelo CPF completo (ex: 000.000.000-00) ou pelo nome completo do cidadão.</p>
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% elif field.name == "status" %}
+              {# Campo status só exibido no formulário de edição #}
+            {% else %}
+              <div class="field-group">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if create_form.non_field_errors %}
+          <div class="form-error-block">
+            {% for error in create_form.non_field_errors %}
+              <span class="form-error">{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      <div class="form-actions">
+        <button class="button-primary" type="submit" style="width:auto;">Salvar agendamento</button>
+        <button type="button" class="dashboard-topbar__action" data-dialog-close>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  {# ── Dialog: Editar agendamento ────────────────────────────────── #}
+  <dialog
+    class="ubs-dialog ubs-dialog--wide"
+    id="agendamento-edit-dialog"
+    aria-labelledby="agendamento-edit-title"
+    {% if open_edit_pk %}data-open-on-load="true" data-edit-pk="{{ open_edit_pk }}"{% endif %}
+  >
+    <form method="post" class="ubs-dialog__shell ubs-dialog__shell--form" id="agendamento-edit-form">
+      {% csrf_token %}
+      <header class="ubs-dialog__head">
+        <div class="ubs-dialog__titlegroup">
+          <div class="pill">Editar agendamento</div>
+          <h2 class="ubs-dialog__title" id="agendamento-edit-title">Editar atendimento</h2>
+        </div>
+        <button class="ubs-dialog__close" type="button" data-dialog-close aria-label="Fechar">×</button>
+      </header>
+
+      <section class="ubs-form">
+        <div class="form-grid form-grid--two">
+          {% for field in edit_form %}
+            {% if field.name == "cidadao_busca" %}
+              <div class="field-group field-group--full">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                <p class="field-help">Deixe vazio para manter o cidadão atual.</p>
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% elif field.name == "status" %}
+              <div class="field-group field-group--full">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                <p class="field-help">Atualize o status conforme o andamento do atendimento.</p>
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% else %}
+              <div class="field-group">
+                <label class="field-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if edit_form.non_field_errors %}
+          <div class="form-error-block">
+            {% for error in edit_form.non_field_errors %}
+              <span class="form-error">{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      <div class="form-actions">
+        <button class="button-primary" type="submit" style="width:auto;">Atualizar agendamento</button>
+        <button type="button" class="dashboard-topbar__action" data-dialog-close>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  {# ── Dialog: Cancelar agendamento ──────────────────────────────── #}
+  <dialog class="ubs-dialog" id="agendamento-cancel-dialog" aria-labelledby="agendamento-cancel-title">
+    <form method="post" class="ubs-dialog__shell" id="agendamento-cancel-form">
+      {% csrf_token %}
+      <header class="ubs-dialog__head">
+        <div class="ubs-dialog__titlegroup">
+          <div class="pill pill--danger">Cancelar agendamento</div>
+          <h2 class="ubs-dialog__title" id="agendamento-cancel-title">Confirmar cancelamento</h2>
+        </div>
+        <button class="ubs-dialog__close" type="button" data-dialog-close aria-label="Fechar">×</button>
+      </header>
+
+      <div class="agendamento-cancel-body">
+        <div class="agendamento-cancel-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <p class="agendamento-cancel-text" id="agendamento-cancel-text">
+          Tem certeza que deseja cancelar este agendamento?
+        </p>
+        <p class="agendamento-cancel-detail" id="agendamento-cancel-detail"></p>
+      </div>
+
+      <footer class="ubs-dialog__footer">
+        <button type="button" class="dashboard-topbar__action" data-dialog-close>Voltar</button>
+        <button class="button-primary button-primary--danger" type="submit">Confirmar cancelamento</button>
+      </footer>
+    </form>
+  </dialog>
+
+  {{ agendamentos_data|json_script:"agendamentos-data" }}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (() => {
+    const dataEl      = document.getElementById('agendamentos-data');
+    const createDialog = document.getElementById('agendamento-create-dialog');
+    const editDialog   = document.getElementById('agendamento-edit-dialog');
+    const cancelDialog = document.getElementById('agendamento-cancel-dialog');
+    const createForm   = document.getElementById('agendamento-create-form');
+    const editForm     = document.getElementById('agendamento-edit-form');
+    const cancelForm   = document.getElementById('agendamento-cancel-form');
+    const cancelText   = document.getElementById('agendamento-cancel-text');
+    const cancelDetail = document.getElementById('agendamento-cancel-detail');
+    const createTrigger = document.querySelector('[data-agendamento-create]');
+
+    if (!dataEl) return;
+
+    const agendamentos    = JSON.parse(dataEl.textContent || '[]');
+    const byId            = Object.fromEntries(agendamentos.map(a => [String(a.pk), a]));
+
+    // ── Utilitários de dialog ──────────────────────────────────────
+    const openDialog  = d => typeof d.showModal === 'function' ? d.showModal()  : d.setAttribute('open', 'open');
+    const closeDialog = d => typeof d.close     === 'function' ? d.close()      : d.removeAttribute('open');
+
+    // Fecha ao clicar no backdrop
+    [createDialog, editDialog, cancelDialog].forEach(d => {
+      d.addEventListener('click', e => { if (e.target === d) closeDialog(d); });
+    });
+
+    // Fecha ao clicar em [data-dialog-close]
+    document.querySelectorAll('[data-dialog-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeDialog(btn.closest('dialog')));
+    });
+
+    // ── Criar ──────────────────────────────────────────────────────
+    createTrigger?.addEventListener('click', () => openDialog(createDialog));
+
+    // Reabre automaticamente se houver erro no POST
+    if (createDialog.dataset.openOnLoad === 'true') openDialog(createDialog);
+
+    // ── Editar ─────────────────────────────────────────────────────
+    function preencherFormEdit(agendamento) {
+      if (!agendamento) return;
+
+      editForm.action = `/agendamentos/${agendamento.pk}/editar/`;
+
+      const set = (name, val) => {
+        const el = editForm.querySelector(`[name="edit-${name}"]`);
+        if (el && val !== undefined) el.value = val;
+      };
+
+      set('ubs',           agendamento.ubs_id);
+      set('especialidade', agendamento.especialidade_id);
+      set('data_vaga',     agendamento.data_vaga || '');
+      set('hora_inicio',   agendamento.hora_inicio || '');
+      set('hora_fim',      agendamento.hora_fim || '');
+      set('status',        agendamento.status || '');
+
+      // Cidadão: preenche com CPF se disponível
+      const cidadaoField = editForm.querySelector('[name="edit-cidadao_busca"]');
+      if (cidadaoField) {
+        cidadaoField.value = agendamento.cidadao?.cpf || agendamento.cidadao?.nome || '';
+        cidadaoField.placeholder = agendamento.cidadao?.nome
+          ? `Atual: ${agendamento.cidadao.nome}`
+          : 'Busque pelo CPF ou nome';
+      }
+    }
+
+    document.querySelectorAll('[data-agendamento-edit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ag = byId[String(btn.dataset.agendamentoEdit)];
+        preencherFormEdit(ag);
+        openDialog(editDialog);
+      });
+    });
+
+    // Reabre dialog de edição em caso de erro de validação no POST
+    const editOpenOnLoad = editDialog.dataset.openOnLoad === 'true';
+    if (editOpenOnLoad) {
+      const editPk = editDialog.dataset.editPk;
+      if (editPk) {
+        const ag = byId[String(editPk)];
+        preencherFormEdit(ag);
+      }
+      // A action já está correta pois o form foi submetido para a URL certa
+      const currentAction = editForm.getAttribute('action') || '';
+      if (!currentAction) {
+        editForm.action = `/agendamentos/${editDialog.dataset.editPk}/editar/`;
+      }
+      openDialog(editDialog);
+    }
+
+    // ── Cancelar ───────────────────────────────────────────────────
+    document.querySelectorAll('[data-agendamento-cancel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ag = byId[String(btn.dataset.agendamentoCancel)];
+        if (!ag) return;
+
+        cancelForm.action = `/agendamentos/${ag.pk}/cancelar/`;
+
+        const nomeCidadao    = btn.dataset.cidadaoNome    || ag.cidadao?.nome || '';
+        const especialidade  = btn.dataset.especialidade  || '';
+        const dataFormatada  = btn.dataset.data           || '';
+
+        cancelText.innerHTML = nomeCidadao
+          ? `Tem certeza que deseja cancelar o agendamento de <strong>${nomeCidadao}</strong>?`
+          : 'Tem certeza que deseja cancelar este agendamento?';
+
+        cancelDetail.textContent = especialidade
+          ? `${especialidade}${dataFormatada ? ' · ' + dataFormatada : ''}`
+          : '';
+
+        openDialog(cancelDialog);
+      });
+    });
+  })();
+</script>
+{% endblock %}

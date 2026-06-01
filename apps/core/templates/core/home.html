@@ -20,23 +20,6 @@
         </p>
       </div>
 
-      <div class="dashboard-hero__stats">
-        <article class="metric-card">
-          <span class="metric-card__label">UBS ativas</span>
-          <strong class="metric-card__value">{{ total_ubs }}</strong>
-          <span class="metric-card__hint">Unidades persistidas no banco</span>
-        </article>
-        <article class="metric-card">
-          <span class="metric-card__label">Vagas confirmadas</span>
-          <strong class="metric-card__value">{{ total_vagas_confirmadas }}</strong>
-          <span class="metric-card__hint">Slots ativos da rede</span>
-        </article>
-        <article class="metric-card">
-          <span class="metric-card__label">Agendamentos vinculados</span>
-          <strong class="metric-card__value">{{ total_agendamentos_vinculados }}</strong>
-          <span class="metric-card__hint">Atendimentos com cidadão</span>
-        </article>
-      </div>
     </section>
 
     <section class="dashboard-grid">
@@ -63,12 +46,28 @@
         </div>
       </article>
 
-      <article class="dashboard-card panel">
+      <article class="dashboard-card panel dashboard-card--stacked-stats">
         <div class="dashboard-card__head">
-          <h2 class="feature-card__title">Agendamentos</h2>
-          <span class="dashboard-card__badge">Operação</span>
+          <h2 class="feature-card__title">Indicadores principais</h2>
+          <span class="dashboard-card__badge">Resumo</span>
         </div>
-        <p class="feature-card__text">Acompanhe o volume geral de vagas e a execução da agenda em toda a rede.</p>
+        <div class="dashboard-stacked-metrics">
+          <article class="metric-card">
+            <span class="metric-card__label">UBS ativas</span>
+            <strong class="metric-card__value">{{ total_ubs }}</strong>
+            <span class="metric-card__hint">Unidades persistidas no banco</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-card__label">Vagas confirmadas</span>
+            <strong class="metric-card__value">{{ total_vagas_confirmadas }}</strong>
+            <span class="metric-card__hint">Slots ativos da rede</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-card__label">Agendamentos vinculados</span>
+            <strong class="metric-card__value">{{ total_agendamentos_vinculados }}</strong>
+            <span class="metric-card__hint">Atendimentos com cidadão</span>
+          </article>
+        </div>
       </article>
     </section>
   </section>

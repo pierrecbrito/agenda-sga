@@ -6,10 +6,10 @@ def get_user_role(user):
         return "anonymous"
     if user.is_superuser:
         return "super_admin"
-    if hasattr(user, "cidadao"):
-        return "cidadao"
     if UbsAdmin.objects.filter(user=user).exists():
         return "ubs_admin"
+    if hasattr(user, "cidadao"):
+        return "cidadao"
     return "usuario"
 
 
