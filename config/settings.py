@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.ubs",
     "apps.agendamentos",
+    "apps.processos",
 ]
 
 MIDDLEWARE = [

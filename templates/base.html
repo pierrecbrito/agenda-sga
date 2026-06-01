@@ -36,6 +36,12 @@
             </span>
             <span class="dashboard-menu__text">Agendamentos</span>
           </a>
+          <a class="dashboard-menu__link{% if request.path|slice:':11' == '/processos/' %} dashboard-menu__link--active{% endif %}" href="{% url 'processos:index' %}">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M6 4h12v2H6zm0 4h12v2H6zm0 4h12v2H6zm0 4h8v2H6z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">Processos</span>
+          </a>
           <a class="dashboard-menu__link" href="{% if request.path == '/home/' or request.path == '/' %}#cidadaos{% else %}{% url 'home' %}#cidadaos{% endif %}">
             <span class="dashboard-menu__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"></path></svg>
