@@ -8,7 +8,7 @@ from django.views.decorators.http import require_http_methods
 from apps.agendamentos.models import VagaAgendamento
 
 from .forms import EnderecoUbsForm, UbsForm
-from .models import EnderecoUbs, Ubs
+from .models import EnderecoUbs, Especialidade, Ubs
 
 
 def _estado_agendamento(qs):
@@ -24,18 +24,15 @@ def _estado_agendamento(qs):
     }
 
 
-@login_required
-def index(request):
-    ubs_queryset = (
-        Ubs.objects.select_related("endereco")
-        .annotate(
-            total_vagas=Count("vagas_agendamento", distinct=True),
-            vagas_confirmadas=Count("vagas_agendamento", filter=Q(vagas_agendamento__status=VagaAgendamento.Status.CONFIRMADO), distinct=True),
-            vagas_executadas=Count("vagas_agendamento", filter=Q(vagas_agendamento__status=VagaAgendamento.Status.EXECUTADO), distinct=True),
-        )
-        .order_by("nome_fantasia")
-    )
-
+def _build_list_context(
+    ubs_queryset,
+    *,
+    ubs_form=None,
+    endereco_form=None,
+    edit_ubs_form=None,
+    edit_endereco_form=None,
+    open_create_dialog=False,
+):
     total_com_endereco = EnderecoUbs.objects.count()
     total_com_agendamento_online = ubs_queryset.filter(permite_agendamento_online=True).count()
     total_vagas_confirmadas = VagaAgendamento.objects.filter(status=VagaAgendamento.Status.CONFIRMADO).count()
@@ -75,22 +72,36 @@ def index(request):
             }
         )
 
-    return render(
-        request,
-        "ubs/ubs_list.html",
-        {
-            "ubs_list": ubs_queryset,
-            "ubs_form": UbsForm(prefix="ubs"),
-            "endereco_form": EnderecoUbsForm(prefix="endereco"),
-            "ubs_dialog_data": ubs_dialog_data,
-            "stats": {
-                "total_ubs": ubs_queryset.count(),
-                "total_com_endereco": total_com_endereco,
-                "total_com_agendamento_online": total_com_agendamento_online,
-                "total_vagas_confirmadas": total_vagas_confirmadas,
-            },
+    return {
+        "ubs_list": ubs_queryset,
+        "ubs_form": ubs_form or UbsForm(prefix="ubs"),
+        "endereco_form": endereco_form or EnderecoUbsForm(prefix="endereco"),
+        "edit_ubs_form": edit_ubs_form or UbsForm(prefix="ubs"),
+        "edit_endereco_form": edit_endereco_form or EnderecoUbsForm(prefix="endereco"),
+        "especialidades_choices": Especialidade.objects.order_by("nome"),
+        "ubs_dialog_data": ubs_dialog_data,
+        "stats": {
+            "total_ubs": ubs_queryset.count(),
+            "total_com_endereco": total_com_endereco,
+            "total_com_agendamento_online": total_com_agendamento_online,
+            "total_vagas_confirmadas": total_vagas_confirmadas,
         },
+        "open_create_dialog": open_create_dialog,
+    }
+
+
+@login_required
+def index(request):
+    ubs_queryset = (
+        Ubs.objects.select_related("endereco")
+        .annotate(
+            total_vagas=Count("vagas_agendamento", distinct=True),
+            vagas_confirmadas=Count("vagas_agendamento", filter=Q(vagas_agendamento__status=VagaAgendamento.Status.CONFIRMADO), distinct=True),
+            vagas_executadas=Count("vagas_agendamento", filter=Q(vagas_agendamento__status=VagaAgendamento.Status.EXECUTADO), distinct=True),
+        )
+        .order_by("nome_fantasia")
     )
+    return render(request, "ubs/ubs_list.html", _build_list_context(ubs_queryset))
 
 
 @login_required
@@ -117,7 +128,16 @@ def detail(request, pk):
 @login_required
 @require_http_methods(["GET", "POST"])
 def create(request):
-    endereco_instance = None
+    ubs_queryset = (
+        Ubs.objects.select_related("endereco")
+        .annotate(
+            total_vagas=Count("vagas_agendamento", distinct=True),
+            vagas_confirmadas=Count("vagas_agendamento", filter=Q(vagas_agendamento__status=VagaAgendamento.Status.CONFIRMADO), distinct=True),
+            vagas_executadas=Count("vagas_agendamento", filter=Q(vagas_agendamento__status=VagaAgendamento.Status.EXECUTADO), distinct=True),
+        )
+        .order_by("nome_fantasia")
+    )
+
     if request.method == "POST":
         ubs_form = UbsForm(request.POST, prefix="ubs")
         endereco_form = EnderecoUbsForm(request.POST, prefix="endereco")
@@ -138,12 +158,13 @@ def create(request):
 
     return render(
         request,
-        "ubs/ubs_form.html",
-        {
-            "form_mode": "create",
-            "ubs_form": ubs_form,
-            "endereco_form": endereco_form,
-        },
+        "ubs/ubs_list.html",
+        _build_list_context(
+            ubs_queryset,
+            ubs_form=ubs_form,
+            endereco_form=endereco_form,
+            open_create_dialog=True,
+        ),
     )
 
 
