@@ -15,7 +15,11 @@ O sistema centraliza o cadastro de cidadãos, UBSs, especialidades e agendamento
 
 - `Cidadao` concentra os dados cadastrais.
 - `Endereco` fica separado para simplificar manutencao e evolucao.
-- Administradores do sistema continuam sendo usuarios do Django com `is_staff` ou `is_superuser`, ligados a um `Cidadao` quando necessario.
+- O sistema trabalha com tres perfis de acesso:
+   - `Super admins`: acesso total ao sistema, sem restricoes de visualizacao ou edicao.
+   - `Admins de UBS`: acesso limitado a uma ou mais UBSs vinculadas ao usuario, podendo gerenciar apenas os dados e agendamentos dessas unidades.
+   - `Cidadaos`: usuarios comuns com acesso aos proprios dados e as solicitacoes de agendamento.
+- Para representar admins de UBS, existe o vínculo `UbsAdmin`, que relaciona um usuario a uma ou mais UBSs.
 
 ## Como executar
 

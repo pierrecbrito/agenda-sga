@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Cidadao, Endereco
+from .models import Cidadao, Endereco, UbsAdmin
 
 
 @admin.register(Cidadao)
@@ -25,3 +25,10 @@ class CidadaoAdmin(admin.ModelAdmin):
 class EnderecoAdmin(admin.ModelAdmin):
     list_display = ("cidadao", "logradouro", "numero", "bairro", "cidade", "uf")
     search_fields = ("cidadao__nome_completo", "logradouro", "cidade", "uf")
+
+
+@admin.register(UbsAdmin)
+class UbsAdminAdmin(admin.ModelAdmin):
+    list_display = ("user", "ubs")
+    search_fields = ("user__username", "user__email", "ubs__nome_fantasia", "ubs__cnes")
+    autocomplete_fields = ("user", "ubs")

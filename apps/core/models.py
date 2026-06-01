@@ -55,3 +55,26 @@ class Endereco(models.Model):
 
     def __str__(self):
         return f"{self.logradouro}, {self.numero} - {self.cidade}/{self.uf}"
+
+
+class UbsAdmin(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="ubs_admin_links",
+    )
+    ubs = models.ForeignKey(
+        "ubs.Ubs",
+        on_delete=models.CASCADE,
+        related_name="admins",
+    )
+
+    class Meta:
+        verbose_name = "admin de ubs"
+        verbose_name_plural = "admins de ubs"
+        constraints = [
+            models.UniqueConstraint(fields=("user", "ubs"), name="unique_user_ubs_admin"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} -> {self.ubs}"

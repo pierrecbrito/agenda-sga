@@ -3,8 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toasts.forEach((toast) => {
     window.setTimeout(() => {
-      toast.classList.add("toast--hide");
-      window.setTimeout(() => toast.remove(), 300);
+      toast.remove();
     }, 4000);
   });
 });
