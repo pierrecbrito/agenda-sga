@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Minha Conta | Agenda SGA{% endblock %}
+
+{% block header_title %}Minha conta{% endblock %}
+
+{% block content %}
+  <section class="dashboard-shell">
+    <header class="panel">
+      <div class="pill">Conta do usuário</div>
+      <h1 class="page-title">Minha conta</h1>
+      <p class="page-lead">Veja seus dados de acesso e informações básicas da sua conta no sistema.</p>
+    </header>
+
+    <section class="panel">
+      <div class="dashboard-card__head">
+        <div>
+          <h2 class="feature-card__title">Dados da conta</h2>
+          <p class="dashboard-card__text">Informações vinculadas ao seu usuário autenticado.</p>
+        </div>
+        <span class="dashboard-card__badge">Usuário</span>
+      </div>
+
+      <div class="ubs-dialog__detail-grid">
+        <article class="ubs-dialog__info-box">
+          <span class="ubs-dialog__info-label">Nome de exibição</span>
+          <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        </article>
+
+        <article class="ubs-dialog__info-box">
+          <span class="ubs-dialog__info-label">CPF / Login</span>
+          <strong>{{ request.user.username }}</strong>
+        </article>
+
+        <article class="ubs-dialog__info-box">
+          <span class="ubs-dialog__info-label">E-mail</span>
+          <strong>{{ request.user.email|default:'Não informado' }}</strong>
+        </article>
+
+        <article class="ubs-dialog__info-box">
+          <span class="ubs-dialog__info-label">Último acesso</span>
+          <strong>{{ request.user.last_login|default:'Primeiro acesso ou sem registro' }}</strong>
+        </article>
+      </div>
+    </section>
+  </section>
+{% endblock %}

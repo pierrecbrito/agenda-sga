@@ -53,3 +53,8 @@ def home(request):
         "total_agendamentos_vinculados": total_agendamentos_vinculados,
     }
     return render(request, "core/home.html", context)
+
+
+@login_required
+def account(request):
+    return render(request, "core/account.html")
