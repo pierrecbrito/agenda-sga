@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "apps.ubs",
     "apps.agendamentos",
     "apps.processos",
+    "apps.logs",
 ]
 
 MIDDLEWARE = [
@@ -29,6 +30,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.logs.middleware.AuditErrorMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -43,6 +45,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.core.context_processors.user_role",
             ],
         },
     },

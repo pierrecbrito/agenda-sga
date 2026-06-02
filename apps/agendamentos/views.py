@@ -13,6 +13,9 @@ from apps.ubs.models import Especialidade, Ubs
 from .forms import AgendamentoAdminForm, AgendamentoCidadaoForm, AgendamentoFilterForm
 from .models import VagaAgendamento
 
+from apps.logs.utils import registrar_log
+from apps.logs.models import LogAuditoria
+
 
 # ---------------------------------------------------------------------------
 # Helpers internos
@@ -250,6 +253,19 @@ def create(request):
                 agendamento.hora_inicio,
             )
             agendamento.save()
+            registrar_log(
+                categoria=LogAuditoria.Categoria.AGENDAMENTO,
+                acao="Agendamento criado",
+                request=request,
+                detalhes={
+                    "protocolo": agendamento.protocolo,
+                    "ubs": agendamento.ubs.nome_fantasia,
+                    "especialidade": agendamento.especialidade.nome,
+                    "data_vaga": str(agendamento.data_vaga) if agendamento.data_vaga else None,
+                    "hora_inicio": agendamento.hora_inicio.strftime("%H:%M"),
+                    "cidadao": agendamento.cidadao.nome_completo if agendamento.cidadao else None,
+                },
+            )
             messages.success(request, "Agendamento criado com sucesso.")
             return redirect("vagas_disponiveis")
 
@@ -308,6 +324,19 @@ def update(request, pk):
                 agendamento_editado.hora_inicio,
             )
             agendamento_editado.save()
+            registrar_log(
+                categoria=LogAuditoria.Categoria.AGENDAMENTO,
+                acao="Agendamento editado",
+                request=request,
+                detalhes={
+                    "protocolo": agendamento_editado.protocolo,
+                    "ubs": agendamento_editado.ubs.nome_fantasia,
+                    "especialidade": agendamento_editado.especialidade.nome,
+                    "data_vaga": str(agendamento_editado.data_vaga) if agendamento_editado.data_vaga else None,
+                    "status_novo": agendamento_editado.status,
+                    "cidadao": agendamento_editado.cidadao.nome_completo if agendamento_editado.cidadao else None,
+                },
+            )
             messages.success(request, "Agendamento atualizado com sucesso.")
             return redirect("vagas_disponiveis")
 
@@ -335,11 +364,25 @@ def cancel(request, pk):
         return redirect("vagas_disponiveis")
 
     if request.method == "POST":
+        status_anterior = agendamento.status
         if role == "cidadao":
             agendamento.status = VagaAgendamento.Status.CANCELADO_PACIENTE
         else:
             agendamento.status = VagaAgendamento.Status.CANCELADO_UBS
         agendamento.save()
+        registrar_log(
+            categoria=LogAuditoria.Categoria.AGENDAMENTO,
+            acao="Agendamento cancelado",
+            request=request,
+            detalhes={
+                "protocolo": agendamento.protocolo,
+                "ubs": agendamento.ubs.nome_fantasia,
+                "especialidade": agendamento.especialidade.nome,
+                "status_anterior": status_anterior,
+                "status_novo": agendamento.status,
+                "cidadao": agendamento.cidadao.nome_completo if agendamento.cidadao else None,
+            },
+        )
         messages.info(request, "Agendamento cancelado.")
         return redirect("vagas_disponiveis")
 

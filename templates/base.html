@@ -42,6 +42,14 @@
             </span>
             <span class="dashboard-menu__text">Processos</span>
           </a>
+          {% if user_role == "super_admin" or user_role == "ubs_admin" %}
+          <a class="dashboard-menu__link{% if request.path|slice:':11' == '/relatorio/' %} dashboard-menu__link--active{% endif %}" href="{% url 'logs:index' %}">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 19h16v2H2V3h2zm3-2h2V9H7zm4 0h2V5h-2zm4 0h2v-6h-2zm4 0h2V7h-2z"></path></svg>
+            </span>
+            <span class="dashboard-menu__text">Relatórios</span>
+          </a>
+          {% endif %}
           <a class="dashboard-menu__link{% if request.path == '/conta/' %} dashboard-menu__link--active{% endif %}" href="{% url 'account' %}">
             <span class="dashboard-menu__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 1.7-6 4v2h12v-2c0-2.3-2.7-4-6-4z"></path></svg>
@@ -53,12 +61,6 @@
               <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"></path></svg>
             </span>
             <span class="dashboard-menu__text">Cidadãos</span>
-          </a>
-          <a class="dashboard-menu__link" href="{% if request.path == '/home/' or request.path == '/' %}#relatorios{% else %}{% url 'home' %}#relatorios{% endif %}">
-            <span class="dashboard-menu__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M4 19h16v2H2V3h2zm3-2h2V9H7zm4 0h2V5h-2zm4 0h2v-6h-2zm4 0h2V7h-2z"></path></svg>
-            </span>
-            <span class="dashboard-menu__text">Relatórios</span>
           </a>
         </nav>
 

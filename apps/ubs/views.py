@@ -10,6 +10,9 @@ from apps.agendamentos.models import VagaAgendamento
 from .forms import EnderecoUbsForm, UbsForm
 from .models import EnderecoUbs, Especialidade, Ubs
 
+from apps.logs.utils import registrar_log
+from apps.logs.models import LogAuditoria
+
 
 def _estado_agendamento(qs):
     hoje = timezone.localdate()
@@ -151,6 +154,17 @@ def create(request):
             endereco.save()
 
             messages.success(request, "UBS cadastrada com sucesso.")
+            registrar_log(
+                categoria=LogAuditoria.Categoria.UBS,
+                acao="UBS criada",
+                request=request,
+                detalhes={
+                    "cnes": ubs.cnes,
+                    "nome_fantasia": ubs.nome_fantasia,
+                    "distrito_sanitario": ubs.distrito_sanitario,
+                    "permite_agendamento_online": ubs.permite_agendamento_online,
+                },
+            )
             return redirect("ubs:detail", pk=ubs.pk)
     else:
         ubs_form = UbsForm(prefix="ubs")
@@ -187,6 +201,17 @@ def update(request, pk):
             endereco.save()
 
             messages.success(request, "UBS atualizada com sucesso.")
+            registrar_log(
+                categoria=LogAuditoria.Categoria.UBS,
+                acao="UBS editada",
+                request=request,
+                detalhes={
+                    "cnes": ubs.cnes,
+                    "nome_fantasia": ubs.nome_fantasia,
+                    "distrito_sanitario": ubs.distrito_sanitario,
+                    "permite_agendamento_online": ubs.permite_agendamento_online,
+                },
+            )
             return redirect("ubs:detail", pk=ubs.pk)
     else:
         ubs_form = UbsForm(prefix="ubs", instance=ubs)
@@ -211,7 +236,17 @@ def delete(request, pk):
 
     if request.method == "POST":
         nome = ubs.nome_fantasia
+        cnes = ubs.cnes
         ubs.delete()
+        registrar_log(
+            categoria=LogAuditoria.Categoria.UBS,
+            acao="UBS excluída",
+            request=request,
+            detalhes={
+                "cnes": cnes,
+                "nome_fantasia": nome,
+            },
+        )
         messages.success(request, f"UBS {nome} excluída com sucesso.")
         return redirect("ubs:index")
 

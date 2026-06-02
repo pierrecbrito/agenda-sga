@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios — Logs | Agenda SGA{% endblock %}
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+
+  {# ── Cabeçalho da seção ──────────────────────────────────────────────── #}
+  <header class="panel relatorios-header">
+    <div class="relatorios-header__title-row">
+      <div class="pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H2V3h2zm3-2h2V9H7zm4 0h2V5h-2zm4 0h2v-6h-2zm4 0h2V7h-2z"/></svg>
+        Relatórios
+      </div>
+      <h1 class="page-title">Relatórios</h1>
+      <p class="page-lead">Acompanhe as operações, auditoria e análises do sistema.</p>
+    </div>
+
+    {# Sub-abas #}
+    <nav class="relatorios-tabs" aria-label="Seções de relatório">
+      <a class="relatorios-tab relatorios-tab--active"
+         href="{% url 'logs:index' %}"
+         aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z"/></svg>
+        Logs de auditoria
+      </a>
+      {# Futuras abas: estatísticas, exportações etc. #}
+    </nav>
+  </header>
+
+  {# ── Bloco de erros recentes — destaque ──────────────────────────────── #}
+  {% if erros_recentes %}
+  <section class="logs-erros-bloco">
+    <div class="logs-erros-bloco__head">
+      <div class="logs-erros-bloco__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      </div>
+      <div>
+        <strong>Erros recentes detectados</strong>
+        <span>Últimas ocorrências de erro ou falha no sistema — verifique e tome ação se necessário.</span>
+      </div>
+      <a class="logs-erros-bloco__filtrar" href="?apenas_erros=1">Ver todos os erros</a>
+    </div>
+    <div class="logs-erros-lista">
+      {% for erro in erros_recentes %}
+      <details class="logs-erro-item">
+        <summary class="logs-erro-item__summary">
+          <span class="logs-erro-badge">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            Erro
+          </span>
+          <span class="logs-erro-acao">{{ erro.acao }}</span>
+          <span class="logs-erro-meta">{{ erro.usuario_str }}</span>
+          <span class="logs-erro-meta">{{ erro.criado_em|date:"d/m/Y H:i:s" }}</span>
+        </summary>
+        <div class="logs-erro-detalhe">
+          {% if erro.detalhes %}
+            <div class="logs-json">
+              {% for k, v in erro.detalhes.items %}
+                <div class="logs-json__row"><span class="logs-json__key">{{ k }}</span><span class="logs-json__val">{{ v }}</span></div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          {% if erro.traceback %}
+            <pre class="logs-traceback">{{ erro.traceback }}</pre>
+          {% endif %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Filtros ──────────────────────────────────────────────────────────── #}
+  <form class="panel" method="get" id="logs-filter-form">
+    <div class="dashboard-card__head">
+      <div>
+        <h2 class="feature-card__title">Filtros</h2>
+        <p class="dashboard-card__text">Refine os logs por categoria, usuário, data ou texto.</p>
+      </div>
+      <span class="dashboard-card__badge">Pesquisa</span>
+    </div>
+    <div class="form-grid form-grid--three">
+      <div class="field-group">
+        <label class="field-label" for="f-categoria">Categoria</label>
+        <select class="field-input" name="categoria" id="f-categoria">
+          <option value="">Todas as categorias</option>
+          {% for val, label in categorias %}
+            <option value="{{ val }}" {% if filtro_categoria == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if role == "super_admin" %}
+      <div class="field-group">
+        <label class="field-label" for="f-usuario">Usuário</label>
+        <input class="field-input" type="text" name="usuario" id="f-usuario"
+               value="{{ filtro_usuario }}" placeholder="Nome ou CPF">
+      </div>
+      {% endif %}
+
+      <div class="field-group">
+        <label class="field-label" for="f-busca">Busca livre</label>
+        <input class="field-input" type="text" name="busca" id="f-busca"
+               value="{{ filtro_busca }}" placeholder="Ação, usuário, detalhes...">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="f-data-ini">De</label>
+        <input class="field-input" type="date" name="data_inicio" id="f-data-ini" value="{{ filtro_data_ini }}">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="f-data-fim">Até</label>
+        <input class="field-input" type="date" name="data_fim" id="f-data-fim" value="{{ filtro_data_fim }}">
+      </div>
+
+      <div class="field-group field-group--checkbox">
+        <label class="logs-checkbox-label">
+          <input type="checkbox" name="apenas_erros" value="1" {% if filtro_apenas_erros %}checked{% endif %}>
+          Exibir apenas erros
+        </label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="button-primary" type="submit" style="width:auto;">Aplicar filtros</button>
+      <a class="dashboard-topbar__action" href="{% url 'logs:index' %}">Limpar filtros</a>
+    </div>
+  </form>
+
+  {# ── Lista de logs ────────────────────────────────────────────────────── #}
+  <section class="panel">
+    <div class="dashboard-card__head">
+      <div>
+        <h2 class="feature-card__title">
+          {% if total == 0 %}Nenhum registro encontrado
+          {% elif total == 1 %}1 registro
+          {% else %}{{ total }} registros
+          {% endif %}
+        </h2>
+        <p class="dashboard-card__text">Exibindo página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.</p>
+      </div>
+      <span class="dashboard-card__badge">Auditoria</span>
+    </div>
+
+    {% if page_obj.object_list %}
+    <div class="logs-table-wrap">
+      <table class="logs-table">
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Categoria</th>
+            <th>Ação</th>
+            <th>Usuário</th>
+            <th>IP</th>
+            <th>Detalhes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in page_obj %}
+          <tr class="logs-row{% if log.eh_erro %} logs-row--erro{% endif %}">
+            <td class="logs-cell--date">
+              <span>{{ log.criado_em|date:"d/m/Y" }}</span>
+              <span class="logs-time">{{ log.criado_em|time:"H:i:s" }}</span>
+            </td>
+            <td>
+              <span class="logs-badge logs-badge--{{ log.categoria|lower }}">
+                {{ log.get_categoria_display }}
+              </span>
+            </td>
+            <td class="logs-cell--acao">
+              {% if log.eh_erro %}
+                <svg class="logs-erro-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              {% endif %}
+              {{ log.acao }}
+              {% if log.traceback %}
+                <details class="logs-traceback-inline">
+                  <summary>ver traceback</summary>
+                  <pre class="logs-traceback">{{ log.traceback }}</pre>
+                </details>
+              {% endif %}
+            </td>
+            <td class="logs-cell--usuario">{{ log.usuario_str|default:"—" }}</td>
+            <td class="logs-cell--ip">{{ log.ip|default:"—" }}</td>
+            <td>
+              {% if log.detalhes %}
+                <details class="logs-detalhes">
+                  <summary>ver detalhes</summary>
+                  <div class="logs-json">
+                    {% for k, v in log.detalhes.items %}
+                      <div class="logs-json__row">
+                        <span class="logs-json__key">{{ k }}</span>
+                        <span class="logs-json__val">{{ v }}</span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </details>
+              {% else %}
+                <span class="logs-sem-detalhe">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# ── Paginação ──────────────────────────────────────────────────────── #}
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="logs-pagination" aria-label="Paginação dos logs">
+      {% if page_obj.has_previous %}
+        <a class="logs-page-btn" href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          Anterior
+        </a>
+      {% endif %}
+
+      <span class="logs-page-info">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+      {% if page_obj.has_next %}
+        <a class="logs-page-btn" href="?{% for k, v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+          Próxima
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </a>
+      {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="agendamentos-empty">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8zm0-4h8v2H8z"/></svg>
+      <strong>Nenhum log encontrado</strong>
+      <span>Ajuste os filtros ou aguarde novas operações no sistema.</span>
+    </div>
+    {% endif %}
+  </section>
+
+</section>
+{% endblock %}
