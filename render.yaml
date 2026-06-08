@@ -36,5 +36,4 @@ services:
 databases:
   - name: agenda-sga-db
     databaseName: agenda_sga_db
-    user: postgres
     plan: free
