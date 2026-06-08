@@ -7,7 +7,7 @@ A automação irá:
 2. Criar o **Web Service** Python para rodar a aplicação.
 3. Vincular de forma automática as chaves e credenciais do banco ao Web Service.
 4. Gerar chaves aleatórias seguras para a `SECRET_KEY` do Django.
-5. Executar as migrações de banco automaticamente a cada novo commit de código (`releaseCommand`).
+5. Executar as migrações de banco automaticamente a cada novo commit de código (`preDeployCommand`).
 6. Servir todos os ativos estáticos de forma otimizada com compressão e cache-busting (`WhiteNoise`).
 
 ---
@@ -49,7 +49,7 @@ Após o deploy automatizado ser concluído com sucesso e o site estar online:
 Sempre que você realizar um `git push` de novas alterações na sua branch principal (`master`/`main`):
 1. O Render puxará o novo código automaticamente.
 2. Instalará as novas dependências e compilará os arquivos estáticos.
-3. Executará automaticamente o comando `python manage.py migrate` para atualizar o banco de dados (graças à diretiva `releaseCommand` configurada).
+3. Executará automaticamente o comando `python manage.py migrate` para atualizar o banco de dados (graças à diretiva `preDeployCommand` configurada).
 4. Fará a substituição do servidor antigo pelo novo com **zero tempo de inatividade** (zero-downtime).
 
 ---
