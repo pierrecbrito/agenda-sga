@@ -13,7 +13,9 @@
         <p class="page-lead">Cadastre, edite, acompanhe e exclua UBS com endereço, especialidades e estatísticas de agendamento por unidade.</p>
       </div>
       <div class="ubs-hero__actions">
-        <a class="button-primary ubs-hero__button" href="{% url 'ubs:create' %}" data-create-dialog-trigger>Nova UBS</a>
+        {% if user_role == "super_admin" %}
+          <a class="button-primary ubs-hero__button" href="{% url 'ubs:create' %}" data-create-dialog-trigger>Nova UBS</a>
+        {% endif %}
         <a class="dashboard-topbar__action ubs-hero__button-secondary" href="{% url 'home' %}">Voltar ao dashboard</a>
       </div>
     </header>
@@ -71,8 +73,12 @@
                 </button>
                 <div class="ubs-card__menu-panel" data-menu-panel="{{ ubs.pk }}">
                   <button type="button" class="ubs-card__menu-item" data-ubs-detail="{{ ubs.pk }}">Detalhes</button>
-                  <button type="button" class="ubs-card__menu-item" data-ubs-edit="{{ ubs.pk }}">Editar</button>
-                  <button type="button" class="ubs-card__menu-item ubs-card__menu-item--danger" data-ubs-delete="{{ ubs.pk }}">Excluir</button>
+                  {% if user_role == "super_admin" or ubs.pk in managed_ubs_ids %}
+                    <button type="button" class="ubs-card__menu-item" data-ubs-edit="{{ ubs.pk }}">Editar</button>
+                  {% endif %}
+                  {% if user_role == "super_admin" %}
+                    <button type="button" class="ubs-card__menu-item ubs-card__menu-item--danger" data-ubs-delete="{{ ubs.pk }}">Excluir</button>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -96,6 +102,27 @@
           <p class="feature-card__text">Nenhuma UBS cadastrada ainda.</p>
         {% endfor %}
       </div>
+
+      {# ── Paginação ──────────────────────────────────────────────────── #}
+      {% if ubs_list.has_other_pages %}
+        <nav style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem;">
+          {% if ubs_list.has_previous %}
+            <a class="button-primary" style="width: auto; padding: 0.5rem 1rem; text-decoration: none;" href="?page={{ ubs_list.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+              &laquo; Anterior
+            </a>
+          {% endif %}
+          
+          <span style="font-size: 0.875rem; color: var(--muted);">
+            Página {{ ubs_list.number }} de {{ ubs_list.paginator.num_pages }}
+          </span>
+
+          {% if ubs_list.has_next %}
+            <a class="button-primary" style="width: auto; padding: 0.5rem 1rem; text-decoration: none;" href="?page={{ ubs_list.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+              Próxima &raquo;
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
     </section>
   </section>
 
@@ -270,6 +297,23 @@
 
   <script>
     (() => {
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, function(match) {
+          const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+          };
+          return escapeMap[match];
+        });
+      }
+
+      const updateUrlBase = "{% url 'ubs:update' 0 %}";
+      const deleteUrlBase = "{% url 'ubs:delete' 0 %}";
+
       const dataElement = document.getElementById('ubs-dialog-data');
       const createDialog = document.getElementById('ubs-create-dialog');
       const createForm = document.getElementById('ubs-create-form');
@@ -399,35 +443,35 @@
           <section class="ubs-dialog__summary">
             <div>
               <p class="ubs-dialog__eyebrow">Resumo da unidade</p>
-              <h3 class="ubs-dialog__summary-title">${ubs.nome_fantasia}</h3>
-              <p class="ubs-dialog__summary-text">${ubs.razao_social} · ${ubs.distrito_sanitario}</p>
+              <h3 class="ubs-dialog__summary-title">${escapeHtml(ubs.nome_fantasia)}</h3>
+              <p class="ubs-dialog__summary-text">${escapeHtml(ubs.razao_social)} · ${escapeHtml(ubs.distrito_sanitario)}</p>
             </div>
-            <span class="ubs-card__tag">${ubs.cnes}</span>
+            <span class="ubs-card__tag">${escapeHtml(ubs.cnes)}</span>
           </section>
 
           <div class="ubs-dialog__detail-grid">
             <article class="ubs-dialog__info-box">
               <span class="ubs-dialog__info-label">Contato</span>
-              <strong>${ubs.telefone}</strong>
-              <span>${ubs.email}</span>
+              <strong>${escapeHtml(ubs.telefone)}</strong>
+              <span>${escapeHtml(ubs.email)}</span>
             </article>
 
             <article class="ubs-dialog__info-box">
               <span class="ubs-dialog__info-label">Agenda</span>
-              <strong>${ubs.horario_abertura} às ${ubs.horario_fechamento}</strong>
+              <strong>${escapeHtml(ubs.horario_abertura)} às ${escapeHtml(ubs.horario_fechamento)}</strong>
               <span>Online: ${ubs.permite_agendamento_online ? 'Sim' : 'Não'}</span>
             </article>
 
             <article class="ubs-dialog__info-box">
               <span class="ubs-dialog__info-label">Vagas</span>
-              <strong>${ubs.total_vagas}</strong>
-              <span>${ubs.vagas_confirmadas} confirmadas · ${ubs.vagas_executadas} executadas</span>
+              <strong>${escapeHtml(ubs.total_vagas)}</strong>
+              <span>${escapeHtml(ubs.vagas_confirmadas)} confirmadas · ${escapeHtml(ubs.vagas_executadas)} executadas</span>
             </article>
 
             <article class="ubs-dialog__info-box ubs-dialog__info-box--full">
               <span class="ubs-dialog__info-label">Endereço</span>
-              <strong>${ubs.endereco ? `${ubs.endereco.logradouro}, ${ubs.endereco.numero}` : 'Sem endereço'}</strong>
-              <span>${ubs.endereco ? `${ubs.endereco.bairro} · ${ubs.endereco.cidade}/${ubs.endereco.uf}` : 'Cadastre um endereço para exibir os dados completos.'}</span>
+              <strong>${ubs.endereco ? `${escapeHtml(ubs.endereco.logradouro)}, ${escapeHtml(ubs.endereco.numero)}` : 'Sem endereço'}</strong>
+              <span>${ubs.endereco ? `${escapeHtml(ubs.endereco.bairro)} · ${escapeHtml(ubs.endereco.cidade)}/${escapeHtml(ubs.endereco.uf)}` : 'Cadastre um endereço para exibir os dados completos.'}</span>
             </article>
           </div>
         `;
@@ -522,7 +566,7 @@
           return;
         }
         closeAllMenus();
-        editForm.action = `/ubs/${ubs.pk}/editar/`;
+        editForm.action = updateUrlBase.replace('0', ubs.pk);
         fillEditForm(ubs);
         openDialog(editDialog);
       });
@@ -533,8 +577,8 @@
           return;
         }
         closeAllMenus();
-        deleteForm.action = `/ubs/${ubs.pk}/excluir/`;
-        deleteText.innerHTML = `Tem certeza que deseja excluir <strong>${ubs.nome_fantasia}</strong>?`;
+        deleteForm.action = deleteUrlBase.replace('0', ubs.pk);
+        deleteText.innerHTML = `Tem certeza que deseja excluir <strong>${escapeHtml(ubs.nome_fantasia)}</strong>?`;
         openDialog(deleteDialog);
       });
 
@@ -557,7 +601,7 @@
           return;
         }
         detailDialog.close();
-        editForm.action = `/ubs/${ubs.pk}/editar/`;
+        editForm.action = updateUrlBase.replace('0', ubs.pk);
         fillEditForm(ubs);
         openDialog(editDialog);
       });
@@ -568,8 +612,8 @@
           return;
         }
         detailDialog.close();
-        deleteForm.action = `/ubs/${ubs.pk}/excluir/`;
-        deleteText.innerHTML = `Tem certeza que deseja excluir <strong>${ubs.nome_fantasia}</strong>?`;
+        deleteForm.action = deleteUrlBase.replace('0', ubs.pk);
+        deleteText.innerHTML = `Tem certeza que deseja excluir <strong>${escapeHtml(ubs.nome_fantasia)}</strong>?`;
         openDialog(deleteDialog);
       });
 

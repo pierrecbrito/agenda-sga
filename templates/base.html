@@ -5,10 +5,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Agenda SGA{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
     {% block extra_head %}{% endblock %}
   </head>
   <body class="{% block body_class %}{% endblock %}" data-cidadao-autocomplete-url="{% url 'cidadao_autocomplete' %}">
+    <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
     {% if show_global_header != False %}
     <header class="dashboard-topbar">
       <div class="dashboard-topbar__inner">
@@ -36,18 +38,26 @@
             </span>
             <span class="dashboard-menu__text">Agendamentos</span>
           </a>
-          <a class="dashboard-menu__link{% if request.path|slice:':11' == '/processos/' %} dashboard-menu__link--active{% endif %}" href="{% url 'processos:index' %}">
-            <span class="dashboard-menu__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M6 4h12v2H6zm0 4h12v2H6zm0 4h12v2H6zm0 4h8v2H6z"></path></svg>
-            </span>
-            <span class="dashboard-menu__text">Processos</span>
-          </a>
           {% if user_role == "super_admin" or user_role == "ubs_admin" %}
+          <a class="dashboard-menu__link{% if '/fila/' in request.path and not '/acompanhar' in request.path %} dashboard-menu__link--active{% endif %}" href="{% url 'fila_controle' %}">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </span>
+            <span class="dashboard-menu__text">Fila de Chamada</span>
+          </a>
           <a class="dashboard-menu__link{% if request.path|slice:':11' == '/relatorio/' %} dashboard-menu__link--active{% endif %}" href="{% url 'logs:index' %}">
             <span class="dashboard-menu__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 19h16v2H2V3h2zm3-2h2V9H7zm4 0h2V5h-2zm4 0h2v-6h-2zm4 0h2V7h-2z"></path></svg>
             </span>
             <span class="dashboard-menu__text">Relatórios</span>
+          </a>
+          {% endif %}
+          {% if user_role == "cidadao" %}
+          <a class="dashboard-menu__link{% if '/fila/acompanhar/' in request.path %} dashboard-menu__link--active{% endif %}" href="{% url 'fila_acompanhar' %}">
+            <span class="dashboard-menu__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-activity"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            </span>
+            <span class="dashboard-menu__text">Acompanhar Fila</span>
           </a>
           {% endif %}
           <a class="dashboard-menu__link{% if request.path == '/conta/' %} dashboard-menu__link--active{% endif %}" href="{% url 'account' %}">
@@ -56,12 +66,14 @@
             </span>
             <span class="dashboard-menu__text">Conta</span>
           </a>
-          <a class="dashboard-menu__link" href="{% if request.path == '/home/' or request.path == '/' %}#cidadaos{% else %}{% url 'home' %}#cidadaos{% endif %}">
+          {% if user_role == "super_admin" or user_role == "ubs_admin" %}
+          <a class="dashboard-menu__link{% if '/cidadaos/' in request.path %} dashboard-menu__link--active{% endif %}" href="{% url 'cidadao_list' %}">
             <span class="dashboard-menu__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"></path></svg>
             </span>
             <span class="dashboard-menu__text">Cidadãos</span>
           </a>
+          {% endif %}
         </nav>
 
         {% if request.user.is_authenticated %}
@@ -75,7 +87,7 @@
       </div>
     </header>
     {% endif %}
-    <main class="page-shell {% block shell_class %}{% endblock %}">
+    <main class="page-shell {% block shell_class %}{% endblock %}" id="main-content">
       {% block content %}{% endblock %}
     </main>
     {% if show_global_footer != False %}

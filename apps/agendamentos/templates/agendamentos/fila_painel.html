@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Painel de Chamadas - {{ ubs.nome_fantasia }} | Agenda SGA{% endblock %}
+
+{% block extra_head %}
+<style>
+  :root {
+    --bg-tv: var(--page-bg);
+    --card-bg-tv: var(--surface);
+    --border-tv: var(--surface-border);
+    --text-tv: var(--text);
+    --text-muted-tv: var(--muted);
+  }
+
+  body.tv-body {
+    background-color: var(--bg-tv) !important;
+    color: var(--text-tv) !important;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+  }
+
+  .tv-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  /* Left Panel: History */
+  .tv-sidebar {
+    background: var(--card-bg-tv);
+    border: 1px solid var(--border-tv);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .tv-sidebar__header {
+    border-bottom: 2px solid var(--border-tv);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .tv-sidebar__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-muted-tv);
+    margin: 0;
+  }
+
+  .tv-history-list {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow: hidden;
+  }
+
+  .tv-history-item {
+    background: rgba(0, 0, 0, 0.015);
+    border: 1px solid var(--border-tv);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .tv-history-item__senha {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .tv-history-item__nome {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-tv);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tv-history-item__meta {
+    font-size: 0.85rem;
+    color: var(--text-muted-tv);
+    margin-top: 0.25rem;
+  }
+
+  /* Right Panel: Active Call */
+  .tv-main {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    gap: 1.5rem;
+  }
+
+  .tv-header {
+    background: var(--card-bg-tv);
+    border: 1px solid var(--border-tv);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tv-header__brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: 1px;
+  }
+
+  .tv-header__ubs {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-muted-tv);
+  }
+
+  .tv-header__clock {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-light);
+  }
+
+  .tv-active-call {
+    flex-grow: 1;
+    background: var(--card-bg-tv);
+    border: 1px solid var(--border-tv);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 2rem;
+    box-sizing: border-box;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .tv-active-call--flash {
+    animation: flashCall 1.5s ease-in-out 3;
+    border-color: var(--accent) !important;
+  }
+
+  @keyframes flashCall {
+    0%, 100% { background: var(--card-bg-tv); }
+    50% { background: rgba(var(--accent-rgb), 0.12); }
+  }
+
+  .tv-label {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-muted-tv);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 2rem;
+  }
+
+  .tv-senha {
+    font-size: 8rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 4px;
+    margin: 0;
+    text-shadow: 0 0 40px rgba(var(--accent-rgb), 0.15);
+  }
+
+  .tv-nome {
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--text-tv);
+    margin: 1.5rem 0 0.5rem;
+    max-width: 90%;
+    line-height: 1.2;
+  }
+
+  .tv-especialidade {
+    font-size: 2.25rem;
+    font-weight: 600;
+    color: var(--accent-light);
+    margin: 0;
+  }
+
+  /* Audio unlocking Overlay */
+  .audio-unlock-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(244, 245, 252, 0.98);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .audio-unlock-btn {
+    background: var(--accent);
+    color: var(--primary-contrast);
+    border: none;
+    border-radius: 12px;
+    padding: 1.5rem 2.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(var(--accent-rgb), 0.2);
+    margin-top: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .audio-unlock-btn:hover {
+    transform: scale(1.05);
+  }
+</style>
+{% endblock %}
+
+{% block body_class %}tv-body{% endblock %}
+
+{% block content %}
+<!-- Audio Activation Overlay -->
+<div id="audioUnlock" class="audio-unlock-overlay" onclick="enableAudio()">
+  <div style="max-width: 600px; padding: 2rem;">
+    <svg viewBox="0 0 24 24" width="80" height="80" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); margin-bottom: 2rem;">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+    <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--text);">Ativar Chamadas por Voz</h2>
+    <p style="font-size: 1.25rem; color: var(--muted); line-height: 1.6; margin-bottom: 2rem;">
+      Para que o painel de chamadas toque os alertas sonoros e chame os pacientes por voz, clique no botão abaixo para desbloquear o áudio do navegador.
+    </p>
+    <button class="audio-unlock-btn">Iniciar Painel de TV</button>
+  </div>
+</div>
+
+<div class="tv-container">
+  
+  {# ── Painel Esquerdo: Histórico de chamados ─────────────────────── #}
+  <aside class="tv-sidebar">
+    <div class="tv-sidebar__header">
+      <h2 class="tv-sidebar__title">Últimas Chamadas</h2>
+    </div>
+    <div class="tv-history-list" id="historyList">
+      <!-- Carregado via JS -->
+      <div style="text-align: center; color: #71717a; margin-top: 3rem;">
+        Carregando...
+      </div>
+    </div>
+  </aside>
+
+  {# ── Painel Direito: Chamado Ativo e Relógio ────────────────────── #}
+  <main class="tv-main">
+    <header class="tv-header">
+      <div class="tv-header__brand">Agenda SGA</div>
+      <div class="tv-header__ubs" id="ubsName">{{ ubs.nome_fantasia }}</div>
+      <div class="tv-header__clock" id="tvClock">00:00:00</div>
+    </header>
+
+    <section class="tv-active-call" id="activeCallCard">
+      <div id="activeCallContent" style="display: none; width: 100%;">
+        <div class="tv-label">Chamado agora</div>
+        <h2 class="tv-senha" id="activeSenha">---</h2>
+        <h1 class="tv-nome" id="activeNome">Paciente</h1>
+        <p class="tv-especialidade" id="activeEspecialidade">Especialidade</p>
+      </div>
+
+      <div id="noActiveCall" style="color: var(--muted);">
+        <svg viewBox="0 0 24 24" width="100" height="100" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 2rem; opacity: 0.3;">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        <h2 style="font-size: 2.5rem; font-weight: 700; margin: 0; color: var(--text);">Aguardando Chamada</h2>
+        <p style="font-size: 1.25rem; margin-top: 1rem;">O painel está pronto para receber novas chamadas.</p>
+      </div>
+    </section>
+  </main>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let lastCallId = null;
+  let lastCallTime = null;
+  let audioEnabled = false;
+
+  // Real-time Clock
+  function updateClock() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('pt-BR', { hour12: false });
+    document.getElementById('tvClock').innerText = timeStr;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Web Audio Chime generator
+  function playChime() {
+    if (!audioEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+      
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+      
+      osc1.connect(gainNode);
+      osc2.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      osc1.start();
+      osc2.start();
+      osc1.stop(audioCtx.currentTime + 1.2);
+      osc2.stop(audioCtx.currentTime + 1.2);
+    } catch (e) {
+      console.error("Audio error:", e);
+    }
+  }
+
+  // Voice Speech Synthesis (PT-BR)
+  function speakCall(name, specialty) {
+    if (!audioEnabled || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      
+      // Spell letter-by-letter if needed, but speaking normally is great.
+      const text = `Atenção: ${name}. Comparecer para atendimento de ${specialty}.`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.85;
+      utterance.pitch = 1.0;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const ptVoice = voices.find(v => v.lang.startsWith('pt'));
+      if (ptVoice) {
+        utterance.voice = ptVoice;
+      }
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error("Speech error:", e);
+    }
+  }
+
+  // Flash Card Animation
+  function flashCard() {
+    const card = document.getElementById('activeCallCard');
+    card.classList.remove('tv-active-call--flash');
+    void card.offsetWidth; // Trigger reflow to restart animation
+    card.classList.add('tv-active-call--flash');
+  }
+
+  // Unlocks Web Audio capability on click
+  function enableAudio() {
+    audioEnabled = true;
+    document.getElementById('audioUnlock').style.display = 'none';
+    
+    // Play test sound
+    playChime();
+    
+    // Prefetch SpeechSynthesis voices
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
+    
+    // Start Polling immediately
+    pollQueue();
+    setInterval(pollQueue, 3000);
+  }
+
+  // Main Polling Function
+  function pollQueue() {
+    fetch('/agendamentos/fila/painel/api/{{ ubs.pk }}/')
+      .then(response => response.json())
+      .then(data => {
+        updateActiveCall(data.active);
+        updateHistory(data.history);
+      })
+      .catch(err => console.error("Error polling queue:", err));
+  }
+
+  function updateActiveCall(active) {
+    const activeContent = document.getElementById('activeCallContent');
+    const noActiveCall = document.getElementById('noActiveCall');
+    
+    if (!active) {
+      activeContent.style.display = 'none';
+      noActiveCall.style.display = 'block';
+      lastCallId = null;
+      lastCallTime = null;
+      return;
+    }
+
+    noActiveCall.style.display = 'none';
+    activeContent.style.display = 'block';
+
+    document.getElementById('activeSenha').innerText = active.senha;
+    document.getElementById('activeNome').innerText = active.paciente;
+    document.getElementById('activeEspecialidade').innerText = active.especialidade;
+
+    // Check if it is a new patient OR a recall (same patient, new timestamp)
+    if (active.id !== lastCallId || active.chamado_em !== lastCallTime) {
+      lastCallId = active.id;
+      lastCallTime = active.chamado_em;
+
+      // Perform alert actions
+      flashCard();
+      playChime();
+      
+      // Delay speech slightly to let the chime finish
+      setTimeout(() => {
+        speakCall(active.paciente, active.especialidade);
+      }, 1000);
+    }
+  }
+
+  function updateHistory(history) {
+    const list = document.getElementById('historyList');
+    if (!history || history.length === 0) {
+      list.innerHTML = `
+        <div style="text-align: center; color: #52525b; margin-top: 3rem;">
+          Nenhum histórico hoje.
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    history.forEach(item => {
+      // Format called time
+      const timeStr = item.chamado_em ? new Date(item.chamado_em).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '';
+      
+      html += `
+        <article class="tv-history-item">
+          <div class="tv-history-item__senha">${item.senha}</div>
+          <div class="tv-history-item__nome">${item.paciente}</div>
+          <div class="tv-history-item__meta">${item.especialidade} • chamando às ${timeStr}</div>
+        </article>
+      `;
+    });
+    list.innerHTML = html;
+  }
+</script>
+{% endblock %}

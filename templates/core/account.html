@@ -12,36 +12,137 @@
       <p class="page-lead">Veja seus dados de acesso e informações básicas da sua conta no sistema.</p>
     </header>
 
-    <section class="panel">
-      <div class="dashboard-card__head">
-        <div>
-          <h2 class="feature-card__title">Dados da conta</h2>
-          <p class="dashboard-card__text">Informações vinculadas ao seu usuário autenticado.</p>
+    {% if request.user.cidadao %}
+      <!-- Exibe os dados do Cidadão no formato de formulário estruturado -->
+      <section class="panel">
+        <div class="dashboard-card__head" style="margin-bottom: 24px;">
+          <div>
+            <h2 class="feature-card__title">Dados Cadastrais</h2>
+            <p class="dashboard-card__text">Suas informações pessoais registradas no sistema municipal de saúde.</p>
+          </div>
+          <span class="dashboard-card__badge" style="background: rgba(0, 99, 223, 0.1); color: var(--primary);">Cidadão</span>
         </div>
-        <span class="dashboard-card__badge">Usuário</span>
-      </div>
 
-      <div class="ubs-dialog__detail-grid">
-        <article class="ubs-dialog__info-box">
-          <span class="ubs-dialog__info-label">Nome de exibição</span>
-          <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
-        </article>
+        <!-- Seção 1: Dados de Acesso -->
+        <fieldset style="border: none; padding: 0; margin: 0 0 32px 0;">
+          <legend style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 16px;">
+            1. Dados de Acesso
+          </legend>
+          <div class="register-grid">
+            <div class="field-group">
+              <span class="field-label">CPF</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.cpf }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">E-mail</span>
+              <input class="field-input" type="text" value="{{ request.user.email }}" disabled style="opacity: 0.85;">
+            </div>
+          </div>
+        </fieldset>
 
-        <article class="ubs-dialog__info-box">
-          <span class="ubs-dialog__info-label">CPF / Login</span>
-          <strong>{{ request.user.username }}</strong>
-        </article>
+        <!-- Seção 2: Dados Pessoais -->
+        <fieldset style="border: none; padding: 0; margin: 0 0 32px 0;">
+          <legend style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 16px;">
+            2. Dados Pessoais
+          </legend>
+          <div class="register-grid">
+            <div class="field-group span-2">
+              <span class="field-label">Nome Completo</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.nome_completo }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">RG</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.rg_numero }} - {{ request.user.cidadao.rg_orgao_emissor }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Data de Expedição</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.rg_data_expedicao|date:'d/m/Y' }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Data de Nascimento</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.data_nascimento|date:'d/m/Y' }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Gênero</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.get_genero_display }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Cartão SUS</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.cartao_sus }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">WhatsApp</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.whatsapp|default:'Não informado' }}" disabled style="opacity: 0.85;">
+            </div>
+          </div>
+        </fieldset>
 
-        <article class="ubs-dialog__info-box">
-          <span class="ubs-dialog__info-label">E-mail</span>
-          <strong>{{ request.user.email|default:'Não informado' }}</strong>
-        </article>
+        <!-- Seção 3: Endereço -->
+        <fieldset style="border: none; padding: 0; margin: 0;">
+          <legend style="font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 16px;">
+            3. Endereço residencial
+          </legend>
+          <div class="register-grid">
+            <div class="field-group">
+              <span class="field-label">CEP</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.endereco.cep }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group span-2">
+              <span class="field-label">Logradouro</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.endereco.logradouro }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Número</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.endereco.numero }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Complemento</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.endereco.complemento|default:'Sem complemento' }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Bairro</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.endereco.bairro }}" disabled style="opacity: 0.85;">
+            </div>
+            <div class="field-group">
+              <span class="field-label">Cidade / UF</span>
+              <input class="field-input" type="text" value="{{ request.user.cidadao.endereco.cidade }} - {{ request.user.cidadao.endereco.uf }}" disabled style="opacity: 0.85;">
+            </div>
+          </div>
+        </fieldset>
+      </section>
+    {% else %}
+      <!-- Caso seja um Administrador/Super Admin, exibe os dados básicos da conta -->
+      <section class="panel">
+        <div class="dashboard-card__head">
+          <div>
+            <h2 class="feature-card__title">Dados da conta</h2>
+            <p class="dashboard-card__text">Informações vinculadas ao seu usuário autenticado.</p>
+          </div>
+          <span class="dashboard-card__badge">Administrador</span>
+        </div>
 
-        <article class="ubs-dialog__info-box">
-          <span class="ubs-dialog__info-label">Último acesso</span>
-          <strong>{{ request.user.last_login|default:'Primeiro acesso ou sem registro' }}</strong>
-        </article>
-      </div>
-    </section>
+        <div class="ubs-dialog__detail-grid" style="margin-top: 20px;">
+          <article class="ubs-dialog__info-box">
+            <span class="ubs-dialog__info-label">Nome de exibição</span>
+            <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+          </article>
+
+          <article class="ubs-dialog__info-box">
+            <span class="ubs-dialog__info-label">CPF / Login</span>
+            <strong>{{ request.user.username }}</strong>
+          </article>
+
+          <article class="ubs-dialog__info-box">
+            <span class="ubs-dialog__info-label">E-mail</span>
+            <strong>{{ request.user.email|default:'Não informado' }}</strong>
+          </article>
+
+          <article class="ubs-dialog__info-box">
+            <span class="ubs-dialog__info-label">Último acesso</span>
+            <strong>{{ request.user.last_login|default:'Primeiro acesso ou sem registro' }}</strong>
+          </article>
+        </div>
+      </section>
+    {% endif %}
   </section>
 {% endblock %}

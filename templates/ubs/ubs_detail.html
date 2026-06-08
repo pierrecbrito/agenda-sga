@@ -13,7 +13,9 @@
         <p class="page-lead">{{ ubs.razao_social }} · {{ ubs.distrito_sanitario }}</p>
       </div>
       <div class="ubs-hero__actions">
-        <a class="button-primary ubs-hero__button" href="{% url 'ubs:update' ubs.pk %}">Editar UBS</a>
+        {% if can_manage %}
+          <a class="button-primary ubs-hero__button" href="{% url 'ubs:update' ubs.pk %}">Editar UBS</a>
+        {% endif %}
         <a class="dashboard-topbar__action ubs-hero__button-secondary" href="{% url 'ubs:index' %}">Voltar</a>
       </div>
     </header>

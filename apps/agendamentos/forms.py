@@ -92,4 +92,16 @@ class AgendamentoCidadaoForm(AgendamentoBaseForm):
     Formulário para cidadãos: não exibe campo de status nem busca de cidadão.
     A UBS é limitada pelo queryset passado (apenas com agendamento online habilitado).
     """
-    pass
+    def clean(self):
+        cleaned_data = super().clean()
+        data_vaga = cleaned_data.get("data_vaga")
+        ubs = cleaned_data.get("ubs")
+        if data_vaga and ubs and ubs.antecedencia_maxima_dias:
+            from datetime import timedelta
+            from django.utils import timezone
+            limite = timezone.localdate() + timedelta(days=ubs.antecedencia_maxima_dias)
+            if data_vaga > limite:
+                raise ValidationError({
+                    "data_vaga": f"O agendamento na unidade {ubs.nome_fantasia} só pode ser realizado com até {ubs.antecedencia_maxima_dias} dias de antecedência."
+                })
+        return cleaned_data

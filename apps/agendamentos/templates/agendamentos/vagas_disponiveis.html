@@ -214,6 +214,27 @@
           </div>
         {% endfor %}
       </div>
+
+      {# ── Paginação ──────────────────────────────────────────────────── #}
+      {% if agendamentos.has_other_pages %}
+        <nav style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem;">
+          {% if agendamentos.has_previous %}
+            <a class="button-primary" style="width: auto; padding: 0.5rem 1rem; text-decoration: none;" href="?page={{ agendamentos.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+              &laquo; Anterior
+            </a>
+          {% endif %}
+          
+          <span style="font-size: 0.875rem; color: var(--muted);">
+            Página {{ agendamentos.number }} de {{ agendamentos.paginator.num_pages }}
+          </span>
+
+          {% if agendamentos.has_next %}
+            <a class="button-primary" style="width: auto; padding: 0.5rem 1rem; text-decoration: none;" href="?page={{ agendamentos.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+              Próxima &raquo;
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
     </section>
   </section>
 
@@ -469,8 +490,12 @@
         const dataFormatada  = btn.dataset.data           || '';
 
         cancelText.innerHTML = nomeCidadao
-          ? `Tem certeza que deseja cancelar o agendamento de <strong>${nomeCidadao}</strong>?`
+          ? `Tem certeza que deseja cancelar o agendamento de <strong class="cancel-target"></strong>?`
           : 'Tem certeza que deseja cancelar este agendamento?';
+        const strongEl = cancelText.querySelector('.cancel-target');
+        if (strongEl) {
+          strongEl.textContent = nomeCidadao;
+        }
 
         cancelDetail.textContent = especialidade
           ? `${especialidade}${dataFormatada ? ' · ' + dataFormatada : ''}`

@@ -6,6 +6,7 @@ urlpatterns = [
     path("", include("apps.core.urls")),
     path("agendamentos/", include("apps.agendamentos.urls")),
     path("ubs/", include("apps.ubs.urls")),
-    path("processos/", include("apps.processos.urls")),
     path("relatorio/", include("apps.logs.urls", namespace="logs")),
 ]
+
+handler404 = "apps.core.views.handler404"

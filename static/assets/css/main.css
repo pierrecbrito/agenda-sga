@@ -12,6 +12,9 @@
   --shadow: none;
   --radius: 12px;
   --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --accent: #2A7252;
+  --accent-light: #3b8e67;
+  --accent-rgb: 42, 114, 82;
 }
 
 * {
@@ -39,7 +42,7 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 32px 24px 40px;
+  padding: 16px 16px 24px;
 }
 
 .page-shell--login {
@@ -57,7 +60,7 @@ body {
 .page-shell--dashboard {
   display: block;
   place-items: initial;
-  padding: 24px 0 40px;
+  padding: 12px 0 24px;
 }
 
 .panel {
@@ -553,6 +556,18 @@ body {
 .agendamento-status[data-status="FALTA"] {
   background: rgba(175, 88, 0, 0.12);
   color: #af5800;
+}
+
+.agendamento-status[data-status="CHAMADO"] {
+  background: rgba(220, 38, 38, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  animation: statusPulse 1.5s infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
 }
 
 /* Botões de ação nos cards */
@@ -1264,6 +1279,29 @@ body {
 }
 
 .field-input:focus {
+  outline: 2px solid rgba(0, 99, 223, 0.14);
+  border-color: var(--primary);
+}
+
+.field-select {
+  width: 100%;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 10px 32px 10px 14px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: var(--text);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+.field-select:focus {
   outline: 2px solid rgba(0, 99, 223, 0.14);
   border-color: var(--primary);
 }
@@ -2443,6 +2481,21 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+
+
+/* Checkbox de filtro */
+
+.field-group--checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.logs-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.9rem;
   color: var(--text);
   cursor: pointer;
@@ -2454,3 +2507,63 @@ body {
   accent-color: var(--primary);
   cursor: pointer;
 }
+
+/* Link de esqueci minha senha */
+.login-forgot-link {
+  font-size: 0.88rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s ease, text-decoration 0.2s ease;
+}
+
+.login-forgot-link:hover {
+  opacity: 0.85;
+  text-decoration: underline;
+}
+
+/* Grid layout para formulário de cadastro */
+.register-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 580px) {
+  .register-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .register-grid .span-2 {
+    grid-column: span 2;
+  }
+}
+
+.field-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Skip-to-content accessibility link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: var(--primary);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 0 0 8px 8px;
+  z-index: 99999;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid var(--accent);
+}
+

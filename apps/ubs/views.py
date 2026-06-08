@@ -12,6 +12,7 @@ from .models import EnderecoUbs, Especialidade, Ubs
 
 from apps.logs.utils import registrar_log
 from apps.logs.models import LogAuditoria
+from apps.core.access import get_user_role, user_can_manage_ubs
 
 
 def _estado_agendamento(qs):
@@ -28,6 +29,7 @@ def _estado_agendamento(qs):
 
 
 def _build_list_context(
+    request,
     ubs_queryset,
     *,
     ubs_form=None,
@@ -36,12 +38,23 @@ def _build_list_context(
     edit_endereco_form=None,
     open_create_dialog=False,
 ):
+    from apps.core.models import UbsAdmin
+    managed_ubs_ids = []
+    if request.user.is_authenticated:
+        managed_ubs_ids = list(UbsAdmin.objects.filter(user=request.user).values_list("ubs_id", flat=True))
     total_com_endereco = EnderecoUbs.objects.count()
     total_com_agendamento_online = ubs_queryset.filter(permite_agendamento_online=True).count()
     total_vagas_confirmadas = VagaAgendamento.objects.filter(status=VagaAgendamento.Status.CONFIRMADO).count()
+    stats_total_ubs = ubs_queryset.count()
+
+    # Paginação das UBSs
+    from django.core.paginator import Paginator
+    paginator = Paginator(ubs_queryset, 25)
+    page_num = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_num)
 
     ubs_dialog_data = []
-    for ubs in ubs_queryset:
+    for ubs in page_obj:
         endereco = getattr(ubs, "endereco", None)
         ubs_dialog_data.append(
             {
@@ -76,7 +89,7 @@ def _build_list_context(
         )
 
     return {
-        "ubs_list": ubs_queryset,
+        "ubs_list": page_obj,
         "ubs_form": ubs_form or UbsForm(prefix="ubs"),
         "endereco_form": endereco_form or EnderecoUbsForm(prefix="endereco"),
         "edit_ubs_form": edit_ubs_form or UbsForm(prefix="ubs"),
@@ -84,12 +97,14 @@ def _build_list_context(
         "especialidades_choices": Especialidade.objects.order_by("nome"),
         "ubs_dialog_data": ubs_dialog_data,
         "stats": {
-            "total_ubs": ubs_queryset.count(),
+            "total_ubs": stats_total_ubs,
             "total_com_endereco": total_com_endereco,
             "total_com_agendamento_online": total_com_agendamento_online,
             "total_vagas_confirmadas": total_vagas_confirmadas,
         },
         "open_create_dialog": open_create_dialog,
+        "managed_ubs_ids": managed_ubs_ids,
+        "user_role": get_user_role(request.user),
     }
 
 
@@ -104,7 +119,7 @@ def index(request):
         )
         .order_by("nome_fantasia")
     )
-    return render(request, "ubs/ubs_list.html", _build_list_context(ubs_queryset))
+    return render(request, "ubs/ubs_list.html", _build_list_context(request, ubs_queryset))
 
 
 @login_required
@@ -117,6 +132,8 @@ def detail(request, pk):
     stats = _estado_agendamento(vagas)
     recentes = vagas[:8]
 
+    can_manage = user_can_manage_ubs(request.user, ubs)
+
     return render(
         request,
         "ubs/ubs_detail.html",
@@ -124,6 +141,7 @@ def detail(request, pk):
             "ubs": ubs,
             "stats": stats,
             "recentes": recentes,
+            "can_manage": can_manage,
         },
     )
 
@@ -131,6 +149,17 @@ def detail(request, pk):
 @login_required
 @require_http_methods(["GET", "POST"])
 def create(request):
+    role = get_user_role(request.user)
+    if role != "super_admin":
+        messages.error(request, "Acesso negado. Apenas super administradores podem cadastrar novas UBSs.")
+        registrar_log(
+            categoria=LogAuditoria.Categoria.AUTENTICACAO,
+            acao="Tentativa de cadastro de UBS não autorizada",
+            request=request,
+            detalhes={"role": role},
+        )
+        return redirect("ubs:index")
+
     ubs_queryset = (
         Ubs.objects.select_related("endereco")
         .annotate(
@@ -174,6 +203,7 @@ def create(request):
         request,
         "ubs/ubs_list.html",
         _build_list_context(
+            request,
             ubs_queryset,
             ubs_form=ubs_form,
             endereco_form=endereco_form,
@@ -186,6 +216,28 @@ def create(request):
 @require_http_methods(["GET", "POST"])
 def update(request, pk):
     ubs = get_object_or_404(Ubs, pk=pk)
+    role = get_user_role(request.user)
+
+    if role not in {"super_admin", "ubs_admin"}:
+        messages.error(request, "Acesso negado.")
+        registrar_log(
+            categoria=LogAuditoria.Categoria.AUTENTICACAO,
+            acao="Tentativa de edição de UBS não autorizada (sem privilégios)",
+            request=request,
+            detalhes={"ubs_id": pk, "role": role},
+        )
+        return redirect("ubs:index")
+
+    if role == "ubs_admin" and not user_can_manage_ubs(request.user, ubs):
+        messages.error(request, "Acesso negado. Você não gerencia esta unidade.")
+        registrar_log(
+            categoria=LogAuditoria.Categoria.AUTENTICACAO,
+            acao="Tentativa de edição de UBS não autorizada (não gerencia a unidade)",
+            request=request,
+            detalhes={"ubs_id": pk, "role": role},
+        )
+        return redirect("ubs:index")
+
     endereco_instance = getattr(ubs, "endereco", None)
 
     if request.method == "POST":
@@ -233,6 +285,17 @@ def update(request, pk):
 @require_http_methods(["GET", "POST"])
 def delete(request, pk):
     ubs = get_object_or_404(Ubs, pk=pk)
+    role = get_user_role(request.user)
+
+    if role != "super_admin":
+        messages.error(request, "Acesso negado. Apenas super administradores podem excluir UBSs.")
+        registrar_log(
+            categoria=LogAuditoria.Categoria.AUTENTICACAO,
+            acao="Tentativa de exclusão de UBS não autorizada",
+            request=request,
+            detalhes={"ubs_id": pk, "role": role},
+        )
+        return redirect("ubs:index")
 
     if request.method == "POST":
         nome = ubs.nome_fantasia

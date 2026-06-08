@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Acompanhar Fila | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+
+  {# ── Cabeçalho da página ───────────────────────────────────────── #}
+  <header class="panel">
+    <div class="pill">Acompanhamento Digital</div>
+    <h1 class="page-title">Sua Posição na Fila</h1>
+    <p class="page-lead">
+      Monitore sua vez em tempo real. Evite esperas desnecessárias na unidade.
+    </p>
+  </header>
+
+  <div id="queue-container">
+    {% if agendamento %}
+      {# ── Informações Gerais do Agendamento ──────────────────────────── #}
+      <div class="panel" style="margin-bottom: 2rem;">
+        <div class="dashboard-card__head" style="margin-bottom: 1.5rem;">
+          <div>
+            <h2 class="feature-card__title">Resumo da Consulta</h2>
+            <p class="dashboard-card__text">Dados do seu agendamento hoje.</p>
+          </div>
+          <span class="status-badge status-badge--confirmado" id="badge-status">{{ agendamento.get_status_display }}</span>
+        </div>
+
+        <div class="form-grid form-grid--three" style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+          <div>
+            <span style="font-size: 0.875rem; color: #a1a1aa;">Sua Senha</span>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent); font-family: monospace; margin-top: 0.25rem;">
+              {{ agendamento.senha_atendimento }}
+            </div>
+          </div>
+          <div>
+            <span style="font-size: 0.875rem; color: #a1a1aa;">Especialidade</span>
+            <div style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-top: 0.25rem;">
+              {{ agendamento.especialidade.nome }}
+            </div>
+          </div>
+          <div>
+            <span style="font-size: 0.875rem; color: #a1a1aa;">Horário Agendado</span>
+            <div style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-top: 0.25rem;">
+              {{ agendamento.hora_inicio|time:"H:i" }}
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 1rem; font-size: 1rem; color: #a1a1aa;">
+          Unidade de Atendimento: <strong style="color: #fff;">{{ agendamento.ubs.nome_fantasia }}</strong>
+        </div>
+      </div>
+
+      {# ── Chamado em Destaque ────────────────────────────────────────── #}
+      <div id="called-alert" style="display: none; background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; border-radius: 20px; padding: 2rem; text-align: center; margin-bottom: 2rem; animation: pulseAlert 2s infinite;">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <h2 style="color: #10b981; font-size: 2rem; font-weight: 800; margin: 0;">Sua Senha foi Chamada!</h2>
+        <p style="color: #fff; font-size: 1.25rem; margin-top: 0.5rem; font-weight: 600;">Dirija-se imediatamente à recepção ou consultório na unidade.</p>
+      </div>
+
+      {# ── Painel de Fila Real-Time ────────────────────────────────────── #}
+      <div class="panel" id="normal-queue-info">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; text-align: center;">
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 1.5rem;">
+            <span style="font-size: 0.875rem; color: #a1a1aa; font-weight: 600;">Sua Posição</span>
+            <div style="font-size: 3.5rem; font-weight: 900; color: var(--accent); margin-top: 0.5rem;" id="queue-pos">
+              --
+            </div>
+            <p style="font-size: 0.875rem; color: #71717a; margin-top: 0.5rem;" id="people-ahead-text">-- pessoas na sua frente</p>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 1.5rem;">
+            <span style="font-size: 0.875rem; color: #a1a1aa; font-weight: 600;">Tempo Estimado</span>
+            <div style="font-size: 3.5rem; font-weight: 900; color: var(--accent-light); margin-top: 0.5rem;" id="queue-eta">
+              -- min
+            </div>
+            <p style="font-size: 0.875rem; color: #71717a; margin-top: 0.5rem;">Baseado no ritmo da fila</p>
+          </div>
+        </div>
+      </div>
+
+      {# ── Alerta Importante de Presença Obrigatória ───────────────────── #}
+      <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 16px; padding: 1.5rem; margin-top: 2rem; display: flex; gap: 1rem; align-items: flex-start;">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 0.2rem;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <div>
+          <h4 style="color: #f59e0b; font-size: 1.1rem; font-weight: 700; margin: 0 0 0.25rem;">Comparecimento Obrigatório</h4>
+          <p style="color: #d97706; font-size: 0.95rem; margin: 0; line-height: 1.5;">
+            Lembre-se: De acordo com o regulamento do sistema, você **deve estar presencialmente na unidade 20 minutos antes do seu horário marcado** (às <strong style="color: #fff;">{{ agendamento.hora_inicio|time:"H:i" }}</strong>, portanto, esteja lá até as <strong style="color: #fff;" id="presence-target">--:--</strong>).
+          </p>
+        </div>
+      </div>
+
+    {% else %}
+      {# ── Sem Agendamentos Hoje ──────────────────────────────────────── #}
+      <div class="panel" style="text-align: center; padding: 5rem 2rem;">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #52525b; margin-bottom: 1.5rem; opacity: 0.5;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h2 style="font-size: 1.75rem; font-weight: 800; color: #fff; margin: 0 0 0.5rem;">Nenhum Agendamento Ativo Hoje</h2>
+        <p style="font-size: 1.1rem; color: #71717a; max-width: 450px; margin: 0 auto 2rem;">
+          Você não possui nenhum agendamento confirmado ou chamado para a data de hoje.
+        </p>
+        <a href="{% url 'vagas_disponiveis' %}" class="button-primary" style="text-decoration: none; display: inline-block;">
+          Ver vagas e agendar
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</section>
+
+{% block scripts %}
+{% if agendamento %}
+<script>
+  // Calculate presence target time (20 minutes before hora_inicio)
+  function calculatePresenceTime() {
+    const horaInicioStr = "{{ agendamento.hora_inicio|time:'H:i' }}";
+    const parts = horaInicioStr.split(':');
+    if (parts.length >= 2) {
+      let hours = parseInt(parts[0]);
+      let minutes = parseInt(parts[1]);
+      
+      minutes -= 20;
+      if (minutes < 0) {
+        minutes += 60;
+        hours -= 1;
+        if (hours < 0) {
+          hours = 23;
+        }
+      }
+      
+      const targetStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      document.getElementById('presence-target').innerText = targetStr;
+    }
+  }
+  calculatePresenceTime();
+
+  // API Polling to get live queue data
+  function updateQueueTracker() {
+    fetch('{% url "fila_acompanhar_api" %}')
+      .then(response => response.json())
+      .then(data => {
+        if (!data.ativo) {
+          // If the appointment is completed, canceled or not found, reload page to show empty state
+          window.location.reload();
+          return;
+        }
+
+        // Update badge status
+        const statusMap = {
+          'CONFIRMADO': 'Confirmado',
+          'CHAMADO': 'Chamado',
+          'EXECUTADO': 'Executado'
+        };
+        document.getElementById('badge-status').innerText = statusMap[data.status] || data.status;
+
+        if (data.status === 'CHAMADO') {
+          // Show called alert, hide normal info
+          document.getElementById('called-alert').style.display = 'block';
+          document.getElementById('normal-queue-info').style.display = 'none';
+        } else {
+          // Normal waiting queue info
+          document.getElementById('called-alert').style.display = 'none';
+          document.getElementById('normal-queue-info').style.display = 'block';
+
+          document.getElementById('queue-pos').innerText = data.posicao;
+          document.getElementById('people-ahead-text').innerText = `${data.pessoas_na_frente} ${data.pessoas_na_frente === 1 ? 'pessoa' : 'pessoas'} na sua frente`;
+          document.getElementById('queue-eta').innerText = `${data.estimativa_minutos} min`;
+        }
+      })
+      .catch(err => console.error("Error fetching queue status:", err));
+  }
+
+  // Poll every 3 seconds
+  setInterval(updateQueueTracker, 3000);
+  updateQueueTracker();
+</script>
+<style>
+  @keyframes pulseAlert {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+    }
+  }
+</style>
+{% endif %}
+{% endblock %}

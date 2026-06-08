@@ -5,9 +5,12 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.urls import reverse
 
+from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.http import require_POST
 from apps.core.access import get_user_role
-from apps.core.models import Cidadao
+from apps.core.models import Cidadao, UbsAdmin
 from apps.ubs.models import Especialidade, Ubs
 
 from .forms import AgendamentoAdminForm, AgendamentoCidadaoForm, AgendamentoFilterForm
@@ -164,9 +167,15 @@ def _build_context(
     # Calcula métricas do queryset filtrado
     metricas = _calcular_metricas(agendamentos)
 
-    # Serializa dados para o JS dos dialogs
+    # Paginação dos agendamentos
+    from django.core.paginator import Paginator
+    paginator = Paginator(agendamentos, 25)
+    page_num = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_num)
+
+    # Serializa dados para o JS dos dialogs (apenas os itens da página atual)
     agendamentos_data = []
-    for ag in agendamentos:
+    for ag in page_obj:
         agendamentos_data.append(
             {
                 "pk": ag.pk,
@@ -186,7 +195,7 @@ def _build_context(
         )
 
     return {
-        "agendamentos": agendamentos,
+        "agendamentos": page_obj,
         "agendamentos_data": agendamentos_data,
         "filter_form": filter_form,
         "create_form": create_form,
@@ -387,3 +396,373 @@ def cancel(request, pk):
         return redirect("vagas_disponiveis")
 
     return redirect("vagas_disponiveis")
+
+
+# ---------------------------------------------------------------------------
+# Fila de Chamada / Painel Views
+# ---------------------------------------------------------------------------
+
+@login_required
+def fila_controle(request):
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        messages.error(request, "Acesso negado. Apenas administradores podem gerenciar a fila.")
+        return redirect("home")
+
+    # Get allowed UBSs
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    
+    # Selected UBS filter
+    ubs_id = request.GET.get("ubs")
+    if ubs_id:
+        selected_ubs = get_object_or_404(allowed_ubs, pk=ubs_id)
+    else:
+        selected_ubs = allowed_ubs.first()
+
+    # Get specialties for filtering
+    specialties = Especialidade.objects.none()
+    selected_specialty_id = request.GET.get("especialidade")
+    selected_specialty = None
+    if selected_ubs:
+        specialties = selected_ubs.especialidades.all().order_by("nome")
+        if selected_specialty_id:
+            selected_specialty = get_object_or_404(specialties, pk=selected_specialty_id)
+
+    hoje = timezone.localdate()
+    
+    # Query for appointments of today at the selected UBS
+    vagas_hoje = VagaAgendamento.objects.filter(
+        ubs=selected_ubs,
+        data_vaga=hoje,
+        cidadao__isnull=False
+    ).select_related("cidadao", "especialidade")
+
+    if selected_specialty:
+        vagas_hoje = vagas_hoje.filter(especialidade=selected_specialty)
+
+    # Active chamado
+    vaga_chamada = vagas_hoje.filter(status=VagaAgendamento.Status.CHAMADO).order_by("-chamado_em").first()
+
+    # Waiting (status = CONFIRMADO)
+    proximos = vagas_hoje.filter(status=VagaAgendamento.Status.CONFIRMADO).order_by("hora_inicio")
+
+    # Metrics
+    total_aguardando = vagas_hoje.filter(status=VagaAgendamento.Status.CONFIRMADO).count()
+    total_atendidos = vagas_hoje.filter(status=VagaAgendamento.Status.EXECUTADO).count()
+    total_faltas = vagas_hoje.filter(status=VagaAgendamento.Status.FALTA).count()
+
+    context = {
+        "role": role,
+        "allowed_ubs": allowed_ubs,
+        "selected_ubs": selected_ubs,
+        "specialties": specialties,
+        "selected_specialty": selected_specialty,
+        "vaga_chamada": vaga_chamada,
+        "proximos": proximos,
+        "total_aguardando": total_aguardando,
+        "total_atendidos": total_atendidos,
+        "total_faltas": total_faltas,
+    }
+    return render(request, "agendamentos/fila_controle.html", context)
+
+
+@login_required
+@require_POST
+def fila_chamar(request, vaga_id):
+    from django.db import transaction
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        return HttpResponseForbidden("Acesso negado.")
+
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    vaga = get_object_or_404(VagaAgendamento, pk=vaga_id, ubs__in=allowed_ubs)
+
+    with transaction.atomic():
+        # Auto-concluir outro paciente CHAMADO na mesma UBS e especialidade
+        outras_chamadas = VagaAgendamento.objects.filter(
+            ubs=vaga.ubs,
+            especialidade=vaga.especialidade,
+            data_vaga=timezone.localdate(),
+            status=VagaAgendamento.Status.CHAMADO
+        )
+        for v in outras_chamadas:
+            v.status = VagaAgendamento.Status.EXECUTADO
+            v.save()
+
+        vaga.status = VagaAgendamento.Status.CHAMADO
+        vaga.chamado_em = timezone.now()
+        vaga.save()
+
+    registrar_log(
+        categoria=LogAuditoria.Categoria.AGENDAMENTO,
+        acao="Paciente chamado para atendimento",
+        request=request,
+        detalhes={
+            "vaga_id": vaga.pk,
+            "senha": vaga.senha_atendimento,
+            "paciente": vaga.cidadao.nome_completo if vaga.cidadao else None,
+            "ubs": vaga.ubs.nome_fantasia,
+            "especialidade": vaga.especialidade.nome,
+        }
+    )
+
+    messages.success(request, f"Paciente {vaga.cidadao.nome_completo} chamado com sucesso.")
+    
+    redirect_url = f"{reverse('fila_controle')}?ubs={vaga.ubs.pk}"
+    if request.GET.get("especialidade"):
+        redirect_url += f"&especialidade={request.GET.get('especialidade')}"
+    return redirect(redirect_url)
+
+
+@login_required
+@require_POST
+def fila_concluir(request, vaga_id):
+    from django.db import transaction
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        return HttpResponseForbidden("Acesso negado.")
+
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    vaga = get_object_or_404(VagaAgendamento, pk=vaga_id, ubs__in=allowed_ubs)
+
+    with transaction.atomic():
+        vaga.status = VagaAgendamento.Status.EXECUTADO
+        vaga.save()
+
+    registrar_log(
+        categoria=LogAuditoria.Categoria.AGENDAMENTO,
+        acao="Atendimento concluído",
+        request=request,
+        detalhes={
+            "vaga_id": vaga.pk,
+            "senha": vaga.senha_atendimento,
+            "paciente": vaga.cidadao.nome_completo if vaga.cidadao else None,
+        }
+    )
+
+    messages.success(request, f"Atendimento de {vaga.cidadao.nome_completo} concluído.")
+    
+    redirect_url = f"{reverse('fila_controle')}?ubs={vaga.ubs.pk}"
+    if request.GET.get("especialidade"):
+        redirect_url += f"&especialidade={request.GET.get('especialidade')}"
+    return redirect(redirect_url)
+
+
+@login_required
+@require_POST
+def fila_falta(request, vaga_id):
+    from django.db import transaction
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        return HttpResponseForbidden("Acesso negado.")
+
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    vaga = get_object_or_404(VagaAgendamento, pk=vaga_id, ubs__in=allowed_ubs)
+
+    with transaction.atomic():
+        vaga.status = VagaAgendamento.Status.FALTA
+        vaga.save()
+
+    registrar_log(
+        categoria=LogAuditoria.Categoria.AGENDAMENTO,
+        acao="Registrada falta do paciente",
+        request=request,
+        detalhes={
+            "vaga_id": vaga.pk,
+            "senha": vaga.senha_atendimento,
+            "paciente": vaga.cidadao.nome_completo if vaga.cidadao else None,
+        }
+    )
+
+    messages.warning(request, f"Registrada falta para {vaga.cidadao.nome_completo}.")
+    
+    redirect_url = f"{reverse('fila_controle')}?ubs={vaga.ubs.pk}"
+    if request.GET.get("especialidade"):
+        redirect_url += f"&especialidade={request.GET.get('especialidade')}"
+    return redirect(redirect_url)
+
+
+@login_required
+@require_POST
+def fila_rechamar(request, vaga_id):
+    from django.db import transaction
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        return HttpResponseForbidden("Acesso negado.")
+
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    vaga = get_object_or_404(VagaAgendamento, pk=vaga_id, ubs__in=allowed_ubs)
+
+    with transaction.atomic():
+        vaga.chamado_em = timezone.now()
+        vaga.save()
+
+    registrar_log(
+        categoria=LogAuditoria.Categoria.AGENDAMENTO,
+        acao="Paciente chamado novamente (rechamar)",
+        request=request,
+        detalhes={
+            "vaga_id": vaga.pk,
+            "senha": vaga.senha_atendimento,
+            "paciente": vaga.cidadao.nome_completo if vaga.cidadao else None,
+        }
+    )
+
+    messages.info(request, f"Rechamado: {vaga.cidadao.nome_completo}.")
+    
+    redirect_url = f"{reverse('fila_controle')}?ubs={vaga.ubs.pk}"
+    if request.GET.get("especialidade"):
+        redirect_url += f"&especialidade={request.GET.get('especialidade')}"
+    return redirect(redirect_url)
+
+
+@login_required
+def fila_painel(request, ubs_id):
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        return HttpResponseForbidden("Acesso negado.")
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    ubs = get_object_or_404(allowed_ubs, pk=ubs_id)
+    
+    context = {
+        "ubs": ubs,
+        "show_global_header": False,
+        "show_global_footer": False,
+    }
+    return render(request, "agendamentos/fila_painel.html", context)
+
+
+@login_required
+def fila_painel_api(request, ubs_id):
+    role = get_user_role(request.user)
+    if role not in {"super_admin", "ubs_admin"}:
+        return HttpResponseForbidden("Acesso negado.")
+    allowed_ubs = _get_allowed_ubs(request.user, role)
+    ubs = get_object_or_404(allowed_ubs, pk=ubs_id)
+    hoje = timezone.localdate()
+    
+    # Find all appointments of the day at this UBS
+    vagas_dia = VagaAgendamento.objects.filter(
+        ubs=ubs,
+        data_vaga=hoje,
+        cidadao__isnull=False
+    ).select_related("cidadao", "especialidade")
+    
+    # Active chamado (status=CHAMADO) sorted by chamado_em descending
+    vaga_ativa = vagas_dia.filter(status=VagaAgendamento.Status.CHAMADO).order_by("-chamado_em").first()
+    
+    # History (called today, but not active, sorted by called timestamp)
+    historico_vagas = vagas_dia.filter(
+        chamado_em__isnull=False
+    ).exclude(
+        pk=vaga_ativa.pk if vaga_ativa else -1
+    ).order_by("-chamado_em")[:5]
+    
+    active_data = None
+    if vaga_ativa:
+        active_data = {
+            "id": vaga_ativa.pk,
+            "paciente": vaga_ativa.cidadao.nome_completo,
+            "senha": vaga_ativa.senha_atendimento,
+            "especialidade": vaga_ativa.especialidade.nome,
+            "chamado_em": vaga_ativa.chamado_em.isoformat() if vaga_ativa.chamado_em else "",
+        }
+        
+    history_list = []
+    for h in historico_vagas:
+        history_list.append({
+            "id": h.pk,
+            "paciente": h.cidadao.nome_completo,
+            "senha": h.senha_atendimento,
+            "especialidade": h.especialidade.nome,
+            "status": h.get_status_display(),
+            "chamado_em": h.chamado_em.isoformat() if h.chamado_em else "",
+        })
+        
+    return JsonResponse({
+        "active": active_data,
+        "history": history_list
+    })
+
+
+@login_required
+def fila_acompanhar(request):
+    role = get_user_role(request.user)
+    if role != "cidadao" or not hasattr(request.user, "cidadao"):
+        messages.error(request, "Apenas cidadãos podem acompanhar suas filas.")
+        return redirect("home")
+        
+    hoje = timezone.localdate()
+    # Find any today's appointment (CONFIRMADO or CHAMADO) for this citizen
+    agendamento = VagaAgendamento.objects.filter(
+        cidadao=request.user.cidadao,
+        data_vaga=hoje,
+        status__in=[VagaAgendamento.Status.CONFIRMADO, VagaAgendamento.Status.CHAMADO]
+    ).select_related("ubs", "especialidade").first()
+    
+    context = {
+        "agendamento": agendamento,
+    }
+    return render(request, "agendamentos/fila_acompanhar.html", context)
+
+
+@login_required
+def fila_acompanhar_api(request):
+    role = get_user_role(request.user)
+    if role != "cidadao" or not hasattr(request.user, "cidadao"):
+        return JsonResponse({"error": "Acesso negado."}, status=403)
+        
+    hoje = timezone.localdate()
+    agendamento = VagaAgendamento.objects.filter(
+        cidadao=request.user.cidadao,
+        data_vaga=hoje,
+        status__in=[VagaAgendamento.Status.CONFIRMADO, VagaAgendamento.Status.CHAMADO]
+    ).select_related("ubs", "especialidade").first()
+    
+    if not agendamento:
+        return JsonResponse({"ativo": False})
+        
+    if agendamento.status == VagaAgendamento.Status.CHAMADO:
+        return JsonResponse({
+            "ativo": True,
+            "status": agendamento.status,
+            "senha": agendamento.senha_atendimento,
+            "especialidade": agendamento.especialidade.nome,
+            "ubs": agendamento.ubs.nome_fantasia,
+            "posicao": 0,
+            "pessoas_na_frente": 0,
+            "estimativa_minutos": 0,
+        })
+        
+    # Queue position: count of confirmed appointments of today with earlier start time
+    vagas_frente = VagaAgendamento.objects.filter(
+        ubs=agendamento.ubs,
+        especialidade=agendamento.especialidade,
+        data_vaga=hoje,
+        status=VagaAgendamento.Status.CONFIRMADO,
+        hora_inicio__lt=agendamento.hora_inicio
+    )
+    
+    pessoas_na_frente = vagas_frente.count()
+    posicao = pessoas_na_frente + 1
+    
+    # Estimativa de tempo baseada na duração real configurada das vagas anteriores
+    estimativa_minutos = 0
+    for v in vagas_frente:
+        if v.hora_inicio and v.hora_fim:
+            duracao = (datetime.combine(hoje, v.hora_fim) - datetime.combine(hoje, v.hora_inicio)).total_seconds() / 60
+            estimativa_minutos += int(max(duracao, 1))
+        else:
+            estimativa_minutos += 15  # Fallback padrão de 15 minutos
+    
+    return JsonResponse({
+        "ativo": True,
+        "status": agendamento.status,
+        "senha": agendamento.senha_atendimento,
+        "especialidade": agendamento.especialidade.nome,
+        "ubs": agendamento.ubs.nome_fantasia,
+        "posicao": posicao,
+        "pessoas_na_frente": pessoas_na_frente,
+        "estimativa_minutos": estimativa_minutos,
+        "hora_inicio": agendamento.hora_inicio.strftime("%H:%M"),
+    })

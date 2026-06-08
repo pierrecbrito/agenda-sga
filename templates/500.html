@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Erro Interno do Servidor | Agenda SGA{% endblock %}
+{% block body_class %}body--login{% endblock %}
+{% block shell_class %}page-shell--login{% endblock %}
+
+{% block content %}
+  <section class="login-card" style="text-align: center; max-width: 480px;">
+    <div style="font-size: 5rem; font-weight: 800; color: #ef4444; opacity: 0.15; line-height: 1; margin-bottom: 16px;">500</div>
+    <h1 class="login-title" style="font-size: 1.8rem; margin-bottom: 12px;">Erro interno do servidor</h1>
+    <p class="login-text" style="margin-bottom: 32px;">Desculpe, ocorreu um erro inesperado no nosso sistema. Nossa equipe técnica já foi notificada e está trabalhando para corrigir.</p>
+    <a href="{% url 'home' %}" class="button-primary" style="display: inline-block; text-decoration: none; padding: 12px 28px;">Voltar ao início</a>
+  </section>
+{% endblock %}

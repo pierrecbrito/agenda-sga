@@ -11,17 +11,34 @@
 
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
+      {% if form.errors %}
+        <div class="form-error-summary" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.875rem;" role="alert">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <p style="margin: 0;">{{ error }}</p>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      {% endif %}
       <div class="field-group">
         <label class="field-label" for="id_username">CPF</label>
         <input class="field-input" type="text" name="username" autofocus autocomplete="username" inputmode="numeric" placeholder="Digite seu CPF" required id="id_username" data-cpf-mask>
       </div>
 
-      <div class="field-group">
-        <label class="field-label" for="id_password">Senha</label>
+      <div class="field-group" style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label class="field-label" for="id_password">Senha</label>
+          <a href="{% url 'password_reset' %}" class="login-forgot-link">Esqueci minha senha</a>
+        </div>
         <input class="field-input" type="password" name="password" autocomplete="current-password" required id="id_password">
       </div>
 
       <button class="button-primary" type="submit">Entrar</button>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <span style="font-size: 0.88rem; color: var(--muted);">Não tem uma conta?</span>
+        <a href="{% url 'register' %}" style="font-size: 0.88rem; color: var(--primary); text-decoration: none; font-weight: 700; margin-left: 4px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Cadastre-se</a>
+      </div>
     </form>
   </section>
 {% endblock %}

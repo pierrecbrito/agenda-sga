@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastre-se | Agenda SGA{% endblock %}
+{% block body_class %}body--login{% endblock %}
+{% block shell_class %}page-shell--login{% endblock %}
+
+{% block content %}
+  <section class="login-card" style="width: min(100%, 780px); margin: 40px auto; padding: 40px;">
+    <h1 class="login-title" style="text-align: center;">Criar Conta</h1>
+    <p class="login-text" style="text-align: center; margin-bottom: 32px;">Preencha os campos abaixo para cadastrar-se no sistema municipal de agendamento de consultas.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      
+      {% if form.non_field_errors %}
+        <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 24px; font-size: 0.88rem;">
+          {% for error in form.non_field_errors %}
+            <p style="margin: 0;">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Seção 1: Dados de Acesso -->
+      <fieldset style="border: none; padding: 0; margin: 0 0 32px 0;">
+        <legend style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          1. Dados de Acesso
+        </legend>
+        
+        <div class="register-grid">
+          {% if form.tipo_usuario %}
+            <div class="field-group span-2">
+              <label class="field-label" for="{{ form.tipo_usuario.id_for_label }}">{{ form.tipo_usuario.label }}</label>
+              {{ form.tipo_usuario }}
+              {% if form.tipo_usuario.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.tipo_usuario.errors.0 }}</span>{% endif %}
+            </div>
+          {% endif %}
+          
+          {% if form.ubs %}
+            <div class="field-group span-2" id="grupo-ubs" style="display: none;">
+              <label class="field-label" for="{{ form.ubs.id_for_label }}">{{ form.ubs.label }}</label>
+              {{ form.ubs }}
+              {% if form.ubs.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.ubs.errors.0 }}</span>{% endif %}
+            </div>
+          {% endif %}
+
+          <div class="field-group">
+            <label class="field-label" for="{{ form.cpf.id_for_label }}">{{ form.cpf.label }}</label>
+            {{ form.cpf }}
+            {% if form.cpf.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.cpf.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+            {{ form.email }}
+            {% if form.email.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.email.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+            {{ form.password }}
+            {% if form.password.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.password.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.confirm_password.id_for_label }}">{{ form.confirm_password.label }}</label>
+            {{ form.confirm_password }}
+            {% if form.confirm_password.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.confirm_password.errors.0 }}</span>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Seção 2: Dados Pessoais -->
+      <fieldset id="secao-pessoais" style="border: none; padding: 0; margin: 0 0 32px 0;">
+        <legend style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          2. Dados Pessoais
+        </legend>
+        
+        <div class="register-grid">
+          <div class="field-group span-2">
+            <label class="field-label" for="{{ form.nome_completo.id_for_label }}">{{ form.nome_completo.label }}</label>
+            {{ form.nome_completo }}
+            {% if form.nome_completo.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.nome_completo.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.rg_numero.id_for_label }}">{{ form.rg_numero.label }}</label>
+            {{ form.rg_numero }}
+            {% if form.rg_numero.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.rg_numero.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.rg_orgao_emissor.id_for_label }}">{{ form.rg_orgao_emissor.label }}</label>
+            {{ form.rg_orgao_emissor }}
+            {% if form.rg_orgao_emissor.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.rg_orgao_emissor.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.rg_data_expedicao.id_for_label }}">{{ form.rg_data_expedicao.label }}</label>
+            {{ form.rg_data_expedicao }}
+            {% if form.rg_data_expedicao.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.rg_data_expedicao.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.naturalidade.id_for_label }}">{{ form.naturalidade.label }}</label>
+            {{ form.naturalidade }}
+            {% if form.naturalidade.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.naturalidade.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.data_nascimento.id_for_label }}">{{ form.data_nascimento.label }}</label>
+            {{ form.data_nascimento }}
+            {% if form.data_nascimento.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.data_nascimento.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.genero.id_for_label }}">{{ form.genero.label }}</label>
+            {{ form.genero }}
+            {% if form.genero.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.genero.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.cartao_sus.id_for_label }}">{{ form.cartao_sus.label }}</label>
+            {{ form.cartao_sus }}
+            {% if form.cartao_sus.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.cartao_sus.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.whatsapp.id_for_label }}">{{ form.whatsapp.label }}</label>
+            {{ form.whatsapp }}
+            {% if form.whatsapp.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.whatsapp.errors.0 }}</span>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Seção 3: Endereço -->
+      <fieldset id="secao-endereco" style="border: none; padding: 0; margin: 0 0 40px 0;">
+        <legend style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          3. Endereço residencial
+        </legend>
+        
+        <div class="register-grid">
+          <div class="field-group">
+            <label class="field-label" for="{{ form.cep.id_for_label }}">{{ form.cep.label }}</label>
+            {{ form.cep }}
+            {% if form.cep.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.cep.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group span-2">
+            <label class="field-label" for="{{ form.logradouro.id_for_label }}">{{ form.logradouro.label }}</label>
+            {{ form.logradouro }}
+            {% if form.logradouro.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.logradouro.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.numero.id_for_label }}">{{ form.numero.label }}</label>
+            {{ form.numero }}
+            {% if form.numero.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.numero.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.complemento.id_for_label }}">{{ form.complemento.label }}</label>
+            {{ form.complemento }}
+            {% if form.complemento.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.complemento.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.bairro.id_for_label }}">{{ form.bairro.label }}</label>
+            {{ form.bairro }}
+            {% if form.bairro.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.bairro.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.cidade.id_for_label }}">{{ form.cidade.label }}</label>
+            {{ form.cidade }}
+            {% if form.cidade.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.cidade.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="{{ form.uf.id_for_label }}">{{ form.uf.label }}</label>
+            {{ form.uf }}
+            {% if form.uf.errors %}<span class="field-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">{{ form.uf.errors.0 }}</span>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <button class="button-primary" type="submit" style="padding: 14px; font-size: 1rem; font-weight: 700; width: 100%;">Finalizar Cadastro</button>
+        {% if not request.user.is_authenticated %}
+        <div style="text-align: center;">
+          <span style="font-size: 0.88rem; color: var(--muted);">Já possui uma conta?</span>
+          <a href="{% url 'login' %}" style="font-size: 0.88rem; color: var(--primary); text-decoration: none; font-weight: 700; margin-left: 4px;">Entrar</a>
+        </div>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const tipoUsuarioSelect = document.getElementById("{{ form.tipo_usuario.id_for_label }}");
+      const ubsGroup = document.getElementById("grupo-ubs");
+      const secaoPessoais = document.getElementById("secao-pessoais");
+      const secaoEndereco = document.getElementById("secao-endereco");
+
+      function toggleFields() {
+        if (!tipoUsuarioSelect) return;
+        const val = tipoUsuarioSelect.value;
+        if (val === "cidadao") {
+          if (ubsGroup) ubsGroup.style.display = "none";
+          if (secaoPessoais) secaoPessoais.style.display = "block";
+          if (secaoEndereco) secaoEndereco.style.display = "block";
+        } else if (val === "ubs_admin") {
+          if (ubsGroup) ubsGroup.style.display = "block";
+          if (secaoPessoais) secaoPessoais.style.display = "none";
+          if (secaoEndereco) secaoEndereco.style.display = "none";
+        } else if (val === "super_admin") {
+          if (ubsGroup) ubsGroup.style.display = "none";
+          if (secaoPessoais) secaoPessoais.style.display = "none";
+          if (secaoEndereco) secaoEndereco.style.display = "none";
+        }
+      }
+
+      if (tipoUsuarioSelect) {
+        tipoUsuarioSelect.addEventListener("change", toggleFields);
+        toggleFields(); // Execute initially
+      }
+
+      const cepInput = document.getElementById("{{ form.cep.id_for_label }}");
+      const logradouroInput = document.getElementById("{{ form.logradouro.id_for_label }}");
+      const bairroInput = document.getElementById("{{ form.bairro.id_for_label }}");
+      const cidadeInput = document.getElementById("{{ form.cidade.id_for_label }}");
+      const ufInput = document.getElementById("{{ form.uf.id_for_label }}");
+      const numeroInput = document.getElementById("{{ form.numero.id_for_label }}");
+
+      if (cepInput) {
+        cepInput.addEventListener("input", function(e) {
+          let value = e.target.value.replace(/\D/g, "");
+          if (value.length > 8) value = value.slice(0, 8);
+          if (value.length > 5) {
+            value = value.slice(0, 5) + "-" + value.slice(5);
+          }
+          e.target.value = value;
+
+          const cleanCep = value.replace(/\D/g, "");
+          if (cleanCep.length === 8) {
+            fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+              .then(res => res.json())
+              .then(data => {
+                if (!data.erro) {
+                  logradouroInput.value = data.logradouro || "";
+                  bairroInput.value = data.bairro || "";
+                  cidadeInput.value = data.localidade || "";
+                  ufInput.value = data.uf || "";
+                  numeroInput.focus();
+                }
+              })
+              .catch(err => console.error("Erro ao buscar CEP:", err));
+          }
+        });
+      }
+    });
+  </script>
+{% endblock %}

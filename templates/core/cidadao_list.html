@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cidadãos | Agenda SGA{% endblock %}
+
+{% block shell_class %}page-shell--dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-shell">
+
+  {# ── Cabeçalho da página ───────────────────────────────────────── #}
+  <header class="panel">
+    <div class="pill">Cidadãos</div>
+    <h1 class="page-title">Cidadãos Cadastrados</h1>
+    <p class="page-lead">
+      Consulte e busque por cidadãos cadastrados no sistema de saúde municipal.
+    </p>
+  </header>
+
+  {# ── Filtros / Busca ────────────────────────────────────────────── #}
+  <form class="panel" method="get" id="cidadaos-search-form">
+    <div class="dashboard-card__head">
+      <div>
+        <h2 class="feature-card__title">Buscar Cidadão</h2>
+        <p class="dashboard-card__text">Filtre a lista digitando parte do nome ou CPF.</p>
+      </div>
+      <span class="dashboard-card__badge">Filtro</span>
+    </div>
+    
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; width: 100%;">
+      <div class="field-group" style="flex-grow: 1; min-width: 250px; margin-bottom: 0;">
+        <input 
+          type="text" 
+          name="q" 
+          id="search-input" 
+          class="field-input" 
+          placeholder="Digite o nome completo ou CPF..." 
+          value="{{ q }}"
+          autocomplete="off"
+        >
+      </div>
+      <button class="button-primary" type="submit" style="width: auto; padding: 0 2rem;">Buscar</button>
+      {% if q %}
+        <a class="dashboard-topbar__action" href="{% url 'cidadao_list' %}" style="display: inline-flex; align-items: center; text-decoration: none;">Limpar filtro</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {# ── Estatística rápida ──────────────────────────────────────────── #}
+  <div style="margin: 1.5rem 0; font-size: 1rem; color: var(--muted);">
+    Total de cidadãos localizados: <strong style="color: var(--text);">{{ total }}</strong>
+  </div>
+
+  {# ── Listagem de Cidadãos ────────────────────────────────────────── #}
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    {% for cidadao in page_obj %}
+      <article class="panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-color: var(--surface-border);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 0.25rem;">
+              {{ cidadao.nome_completo }}
+            </h3>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--muted);">
+              <span>CPF: <strong style="color: var(--text);">{{ cidadao.cpf }}</strong></span>
+              <span>SUS: <strong style="color: var(--text);">{{ cidadao.cartao_sus }}</strong></span>
+              <span>RG: <strong style="color: var(--text);">{{ cidadao.rg_numero }} ({{ cidadao.rg_orgao_emissor }})</strong></span>
+            </div>
+          </div>
+          {% if cidadao.whatsapp %}
+            <div>
+              <a href="https://wa.me/{{ cidadao.whatsapp }}" target="_blank" style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; color: #10b981; font-weight: 600; text-decoration: none; border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.05); padding: 0.35rem 0.75rem; border-radius: 9999px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.18 1.449 4.725 1.45 5.535 0 10.04-4.502 10.04-10.042.002-2.684-1.04-5.207-2.93-7.099C16.533 1.57 14.013.528 11.334.527c-5.54 0-10.043 4.503-10.045 10.045-.002 1.902.506 3.753 1.47 5.437L1.72 20.31l4.927-1.156zM17.653 14.3c-.307-.154-1.82-.9-2.1-.1-.28.1-.55.45-.68.6-.13.15-.26.17-.57.02-.3-.15-1.29-.48-2.47-1.53-.918-.82-1.54-1.83-1.72-2.14-.18-.3-.02-.47.13-.62.14-.13.3-.35.46-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.7-1.68-.96-2.3-.25-.6-.52-.52-.7-.52-.18-.01-.4-.01-.62-.01-.22 0-.58.08-.88.4-.3.32-1.15 1.13-1.15 2.76s1.19 3.2 1.35 3.42c.16.22 2.3 3.52 5.58 4.94.78.34 1.39.54 1.86.69.79.25 1.5.21 2.07.13.63-.09 1.82-.74 2.07-1.46.26-.72.26-1.34.18-1.47-.08-.13-.3-.2-.61-.35z"/></svg>
+                WhatsApp
+              </a>
+            </div>
+          {% endif %}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; border-top: 1px solid var(--surface-border); padding-top: 1rem;" class="responsive-grid-md">
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 0 0 0.5rem;">Dados Pessoais</h4>
+            <div style="font-size: 0.875rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem;">
+              <span>Nascimento: <strong style="color: var(--text);">{{ cidadao.data_nascimento|date:"d/m/Y" }}</strong></span>
+              <span>Gênero: <strong style="color: var(--text);">{{ cidadao.get_genero_display }}</strong></span>
+              <span>Naturalidade: <strong style="color: var(--text);">{{ cidadao.naturalidade }}</strong></span>
+            </div>
+          </div>
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 0 0 0.5rem;">Residência</h4>
+            {% if cidadao.endereco %}
+              <div style="font-size: 0.875rem; color: var(--muted); display: flex; flex-direction: column; gap: 0.25rem;">
+                <span>{{ cidadao.endereco.logradouro }}, {{ cidadao.endereco.numero }}{% if cidadao.endereco.complemento %} · {{ cidadao.endereco.complemento }}{% endif %}</span>
+                <span>{{ cidadao.endereco.bairro }} · {{ cidadao.endereco.cidade }}/{{ cidadao.endereco.uf }}</span>
+                <span>CEP: {{ cidadao.endereco.cep }}</span>
+              </div>
+            {% else %}
+              <span style="font-size: 0.875rem; color: var(--muted); font-style: italic;">Nenhum endereço cadastrado.</span>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+    {% empty %}
+      <div class="panel" style="text-align: center; padding: 4rem 2rem; border-color: var(--surface-border);">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted); opacity: 0.5; margin-bottom: 1rem;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 0.25rem;">Nenhum cidadão localizado</h3>
+        <p style="font-size: 0.875rem; color: var(--muted); max-width: 300px; margin: 0.5rem auto 0;">Tente refinar sua busca utilizando termos diferentes.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ── Paginação ──────────────────────────────────────────────────── #}
+  {% if page_obj.has_other_pages %}
+    <nav style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem;">
+      {% if page_obj.has_previous %}
+        <a class="button-primary" style="width: auto; padding: 0.5rem 1rem; text-decoration: none;" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">
+          &laquo; Anterior
+        </a>
+      {% endif %}
+      
+      <span style="font-size: 0.875rem; color: var(--muted);">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+      </span>
+
+      {% if page_obj.has_next %}
+        <a class="button-primary" style="width: auto; padding: 0.5rem 1rem; text-decoration: none;" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">
+          Próxima &raquo;
+        </a>
+      {% endif %}
+    </nav>
+  {% endif %}
+
+</section>
+
+<style>
+  @media (min-width: 768px) {
+    .responsive-grid-md {
+      grid-template-columns: 1fr 1fr !important;
+    }
+  }
+</style>
+{% endblock %}

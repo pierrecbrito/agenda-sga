@@ -20,6 +20,7 @@ class VagaAgendamento(models.Model):
         CANCELADO_PACIENTE = "CANCELADO_PACIENTE", "Cancelado pelo paciente"
         CANCELADO_UBS = "CANCELADO_UBS", "Cancelado pela UBS"
         FALTA = "FALTA", "Falta"
+        CHAMADO = "CHAMADO", "Chamado"
 
     class DiaSemana(models.IntegerChoices):
         SEGUNDA = 1, "Segunda-feira"
@@ -51,6 +52,8 @@ class VagaAgendamento(models.Model):
     data_solicitacao = models.DateTimeField(auto_now_add=True)
     protocolo = models.CharField(max_length=32, unique=True, default=gerar_protocolo, editable=False)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.CONFIRMADO)
+    chamado_em = models.DateTimeField(null=True, blank=True)
+    senha_atendimento = models.CharField(max_length=15, blank=True, null=True)
 
     class Meta:
         verbose_name = "vaga de agendamento"
@@ -65,6 +68,15 @@ class VagaAgendamento(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        if self.cidadao and not self.senha_atendimento and self.data_vaga:
+            prefix = "".join(ch for ch in self.especialidade.nome[:3] if ch.isalpha()).upper()
+            count = VagaAgendamento.objects.filter(
+                ubs=self.ubs,
+                especialidade=self.especialidade,
+                data_vaga=self.data_vaga
+            ).count() + 1
+            self.senha_atendimento = f"{prefix}-{count:02d}"
+
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -74,6 +86,12 @@ class VagaAgendamento(models.Model):
         if self.ubs_id and self.especialidade_id:
             if not self.ubs.especialidades.filter(pk=self.especialidade_id).exists():
                 raise ValidationError({"especialidade": "A especialidade selecionada nao esta disponivel nesta UBS."})
+
+        if not self.recorrente and self.data_vaga and self.hora_inicio and self.cidadao:
+            from datetime import datetime
+            slot_dt = timezone.make_aware(datetime.combine(self.data_vaga, self.hora_inicio))
+            if slot_dt < timezone.now():
+                raise ValidationError({"data_vaga": "Não é possível realizar agendamentos em data ou horário no passado."})
 
         if self.recorrente:
             campos_obrigatorios = {
